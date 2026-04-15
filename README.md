@@ -88,8 +88,9 @@ If the GitHub endpoint is unavailable or you're offline, the extension switches 
 ### From GitHub Releases (VSIX)
 
 1. Download the latest `copilot-plus.vsix` from [Releases](https://github.com/juninmd/copilot-plus/releases)
-2. In VS Code: `Extensions` → `...` → `Install from VSIX...`
-3. Select the downloaded file
+2. The release page includes the packaged extension ready to install directly into VS Code.
+3. In VS Code: `Extensions` → `...` → `Install from VSIX...`
+4. Select the downloaded file
 
 ### From Source
 
