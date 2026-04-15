@@ -11,6 +11,8 @@ jobs:
   auto-tag:
     name: Create semver tag on main
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -49,5 +51,16 @@ jobs:
           set -e
           git tag "${{ steps.tag.outputs.next }}"
           git push origin "${{ steps.tag.outputs.next }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub release for new tag
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.next }}
+          name: ${{ steps.tag.outputs.next }}
+          body: "Automated release created for commit ${{ github.sha }}."
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
