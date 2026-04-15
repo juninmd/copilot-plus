@@ -43,7 +43,6 @@ Every model uses a different number of premium requests per call (April 2026):
 
 | Model | Multiplier |
 |-------|-----------|
-| Claude Opus 4.x (fast mode preview) | **30×** |
 | Claude Opus 4.x | **3×** |
 | Claude Sonnet 4.x | **1×** |
 | Gemini Pro | **1×** |
