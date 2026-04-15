@@ -5,7 +5,7 @@ import { log } from './logger';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 // Correct internal endpoint used by the VS Code Copilot extension itself
-const TOKEN_URL = 'https://api.github.com/copilot_internal/v2/token';
+const TOKEN_URL = 'https://api.githubcopilot.com/copilot_internal/v2/token';
 
 export interface QuotaInfo {
   total: number;
