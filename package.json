@@ -34,6 +34,12 @@
         "title": "Open Agent Explorer",
         "category": "Copilot+",
         "icon": "$(extensions)"
+      },
+      {
+        "command": "copilotPlus.diagnose",
+        "title": "Diagnose Quota Connection",
+        "category": "Copilot+",
+        "icon": "$(bug)"
       }
     ],
     "viewsContainers": {
@@ -49,8 +55,11 @@
       "copilotPlus": [
         {
           "id": "copilotPlus.agents",
-          "name": "Agent Explorer",
-          "icon": "resources/activitybar.svg"
+          "name": "Agent Explorer"
+        },
+        {
+          "id": "copilotPlus.models",
+          "name": "Available Models"
         }
       ]
     },
@@ -58,6 +67,11 @@
       "view/title": [
         {
           "command": "copilotPlus.refresh",
+          "when": "view == copilotPlus.agents || view == copilotPlus.models",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.diagnose",
           "when": "view == copilotPlus.agents",
           "group": "navigation"
         }

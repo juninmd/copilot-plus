@@ -6,6 +6,17 @@ export interface ModelUsage {
   cost: number;
 }
 
+export interface AuditEntry {
+  timestamp: number;
+  model: string;
+  cost: number;
+}
+
+export interface BurnRate {
+  requestsPerDay: number;
+  daysLeft: number | null;
+}
+
 // Premium request multipliers per model (April 2026)
 // 0 = base model included in plan, no premium cost
 const MULTIPLIERS: Array<{ match: string; cost: number }> = [
@@ -35,27 +46,30 @@ export function detectMultiplier(modelName: string): number {
       return entry.cost;
     }
   }
-  // Unknown model: default to 1 (conservative)
-  return 1;
+  return 1; // unknown: conservative default
 }
 
 const TODAY_KEY = 'copilotPlus.todayCost';
 const TODAY_DATE_KEY = 'copilotPlus.todayDate';
-const SESSION_KEY = 'copilotPlus.sessionCost';
 
 export class RequestTracker {
   private sessionCost = 0;
   private sessionUsage: Map<string, ModelUsage> = new Map();
+  private readonly auditLog: AuditEntry[] = [];
+  private readonly todayStartTs: number;
 
   constructor(private readonly state: vscode.ExtensionContext['globalState']) {
-    this.resetSessionIfNewDay();
+    this.resetDayIfNeeded();
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    this.todayStartTs = d.getTime();
   }
 
   private today(): string {
     return new Date().toISOString().slice(0, 10);
   }
 
-  private resetSessionIfNewDay(): void {
+  private resetDayIfNeeded(): void {
     const lastDate = this.state.get<string>(TODAY_DATE_KEY);
     if (lastDate !== this.today()) {
       void this.state.update(TODAY_KEY, 0);
@@ -64,7 +78,7 @@ export class RequestTracker {
   }
 
   record(modelName: string): void {
-    this.resetSessionIfNewDay();
+    this.resetDayIfNeeded();
     const cost = detectMultiplier(modelName);
     this.sessionCost += cost;
 
@@ -73,9 +87,11 @@ export class RequestTracker {
     existing.cost += cost;
     this.sessionUsage.set(modelName, existing);
 
+    this.auditLog.unshift({ timestamp: Date.now(), model: modelName, cost });
+    if (this.auditLog.length > 50) this.auditLog.pop();
+
     const todayCost = (this.state.get<number>(TODAY_KEY) ?? 0) + cost;
     void this.state.update(TODAY_KEY, todayCost);
-    void this.state.update(SESSION_KEY, this.sessionCost);
   }
 
   getSessionCost(): number {
@@ -83,7 +99,7 @@ export class RequestTracker {
   }
 
   getTodayCost(): number {
-    this.resetSessionIfNewDay();
+    this.resetDayIfNeeded();
     return this.state.get<number>(TODAY_KEY) ?? 0;
   }
 
@@ -91,11 +107,27 @@ export class RequestTracker {
     return [...this.sessionUsage.values()].sort((a, b) => b.cost - a.cost);
   }
 
+  getAuditLog(limit = 20): AuditEntry[] {
+    return this.auditLog.slice(0, limit);
+  }
+
+  getBurnRate(remainingQuota?: number): BurnRate {
+    const hoursElapsed = (Date.now() - this.todayStartTs) / (1000 * 60 * 60);
+    const todayCost = this.getTodayCost();
+    if (hoursElapsed < 0.5 || todayCost === 0) {
+      return { requestsPerDay: 0, daysLeft: null };
+    }
+    const requestsPerDay = Math.round((todayCost / hoursElapsed) * 24);
+    const daysLeft = remainingQuota != null && requestsPerDay > 0
+      ? Math.floor(remainingQuota / requestsPerDay)
+      : null;
+    return { requestsPerDay, daysLeft };
+  }
+
   logAvailableModels(models: readonly vscode.LanguageModelChat[]): void {
     console.log('[copilot-plus] available models:');
     models.forEach((m) => {
-      const mult = detectMultiplier(m.name);
-      console.log(`  name="${m.name}" family="${m.family}" id="${m.id}" multiplier=${mult}x`);
+      console.log(`  name="${m.name}" family="${m.family}" multiplier=${detectMultiplier(m.name)}x`);
     });
   }
 }

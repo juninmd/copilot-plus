@@ -1,28 +1,39 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
+import * as http from 'http';
+import { log } from './logger';
 
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const TOKEN_URL = 'https://api.githubcopilot.com/copilot_internal/v2/token';
+const CACHE_TTL_MS = 5 * 60 * 1000;
+// Correct internal endpoint used by the VS Code Copilot extension itself
+const TOKEN_URL = 'https://api.github.com/copilot_internal/v2/token';
 
 export interface QuotaInfo {
   total: number;
   used: number;
   remaining: number;
   percentUsed: number;
+  source: 'api' | 'estimated';
+}
+
+export type QuotaFailReason = 'no-session' | 'no-quota-field' | 'api-error';
+
+export interface QuotaResult {
+  quota: QuotaInfo | null;
+  failReason?: QuotaFailReason;
+  failMessage?: string;
 }
 
 interface JwtPayload {
+  sku?: string;
   limited_user_quotas?: {
-    month?: {
-      chat_requests?: number;
-      used?: number;
-      remaining?: number;
-    };
+    month?: { chat_requests?: number; used?: number; remaining?: number };
   };
+  chat_quota?: { limit?: number; remaining?: number };
+  [key: string]: unknown;
 }
 
 interface CacheEntry {
-  data: QuotaInfo;
+  data: QuotaResult;
   fetchedAt: number;
 }
 
@@ -33,112 +44,137 @@ async function getGitHubToken(): Promise<string | null> {
     const session = await vscode.authentication.getSession('github', ['read:user'], {
       createIfNone: false
     });
-    return session?.accessToken ?? null;
-  } catch {
+    if (!session) {
+      log('Auth: No GitHub session found. Sign in via VS Code → Accounts.');
+      return null;
+    }
+    log(`Auth: signed in as ${session.account.label}`);
+    return session.accessToken;
+  } catch (err) {
+    log(`Auth error: ${String(err)}`);
     return null;
   }
 }
 
-function fetchCopilotJwt(githubToken: string): Promise<string> {
+function httpGet(url: string, token: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const req = https.request(
-      TOKEN_URL,
+      url,
       {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${githubToken}`,
+          Authorization: `Bearer ${token}`,
           'User-Agent': 'copilot-plus-vscode-ext/0.1.0',
-          Accept: 'application/json'
+          Accept: 'application/json',
+          'X-GitHub-Api-Version': '2022-11-28'
         }
       },
-      (res) => {
+      (res: http.IncomingMessage) => {
         let body = '';
-        res.on('data', (chunk) => (body += chunk));
+        res.on('data', (chunk: { toString(): string }) => (body += chunk.toString()));
         res.on('end', () => {
+          log(`HTTP ${res.statusCode} ← ${url}`);
           if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-            try {
-              const parsed = JSON.parse(body) as { token?: string };
-              if (parsed.token) {
-                resolve(parsed.token);
-              } else {
-                reject(new Error('No token in response'));
-              }
-            } catch {
-              reject(new Error('Failed to parse JSON response'));
-            }
+            resolve(body);
           } else {
-            reject(new Error(`HTTP ${res.statusCode}`));
+            reject(new Error(`HTTP ${res.statusCode}: ${body.slice(0, 200)}`));
           }
         });
       }
     );
     req.on('error', reject);
-    req.setTimeout(8000, () => {
-      req.destroy(new Error('Request timeout'));
-    });
+    req.setTimeout(8000, () => req.destroy(new Error('Request timeout')));
     req.end();
   });
 }
 
 function decodeJwtPayload(jwt: string): JwtPayload {
   const parts = jwt.split('.');
-  if (parts.length < 2) {
-    throw new Error('Invalid JWT structure');
-  }
-  const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-  const decoded = Buffer.from(padded, 'base64').toString('utf-8');
-  return JSON.parse(decoded) as JwtPayload;
+  if (parts.length < 2) throw new Error('Invalid JWT structure');
+  const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+  const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+  // globalThis.Buffer is always available in Node.js runtime
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return JSON.parse((globalThis as any).Buffer.from(padded, 'base64').toString('utf-8')) as JwtPayload;
 }
 
-async function fetchWithRetry(githubToken: string, attempts = 3): Promise<QuotaInfo | null> {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const jwt = await fetchCopilotJwt(githubToken);
-      const payload = decodeJwtPayload(jwt);
-      const month = payload.limited_user_quotas?.month;
-      if (!month) {
-        return null;
-      }
-      const total = month.chat_requests ?? 300;
-      const remaining = month.remaining ?? total;
-      const used = month.used ?? (total - remaining);
-      return {
-        total,
-        used,
-        remaining,
-        percentUsed: Math.round((used / total) * 100)
-      };
-    } catch (err) {
-      if (i === attempts - 1) {
-        console.error('[copilot-plus] quota fetch failed after retries:', err);
-      } else {
-        await new Promise((r) => setTimeout(r, 2 ** i * 500));
-      }
-    }
+function extractQuota(payload: JwtPayload, configTotal: number): QuotaInfo | null {
+  log(`JWT keys: [${Object.keys(payload).join(', ')}] | sku: ${payload.sku ?? 'n/a'}`);
+
+  const month = payload.limited_user_quotas?.month;
+  if (month && (month.remaining !== undefined || month.chat_requests !== undefined)) {
+    const total = month.chat_requests ?? configTotal;
+    const remaining = month.remaining ?? total;
+    const used = month.used ?? (total - remaining);
+    log(`Quota found: ${remaining}/${total} remaining`);
+    return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
   }
+
+  const alt = payload.chat_quota;
+  if (alt?.remaining !== undefined) {
+    const total = alt.limit ?? configTotal;
+    const remaining = alt.remaining;
+    log(`Quota found (alt field): ${remaining}/${total}`);
+    return { total, used: total - remaining, remaining, percentUsed: Math.round(((total - remaining) / total) * 100), source: 'api' };
+  }
+
+  log('No quota fields in JWT. Plan may not expose premium request data.');
   return null;
 }
 
-export async function fetchQuota(): Promise<QuotaInfo | null> {
+export async function fetchQuota(forceRefresh = false): Promise<QuotaResult> {
+  const configTotal = vscode.workspace.getConfiguration('copilotPlus').get<number>('quotaTotal') ?? 300;
   const now = Date.now();
-  if (cache && now - cache.fetchedAt < CACHE_TTL_MS) {
+
+  if (!forceRefresh && cache && now - cache.fetchedAt < CACHE_TTL_MS) {
     return cache.data;
   }
 
   const token = await getGitHubToken();
   if (!token) {
-    console.warn('[copilot-plus] no GitHub session — running in offline mode');
-    return null;
+    return {
+      quota: null,
+      failReason: 'no-session',
+      failMessage: 'Not signed in to GitHub. Use VS Code → Accounts to sign in.'
+    };
   }
 
-  const data = await fetchWithRetry(token);
-  if (data) {
-    cache = { data, fetchedAt: now };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const body = await httpGet(TOKEN_URL, token);
+      const parsed = JSON.parse(body) as { token?: string };
+      if (!parsed.token) {
+        log('API response missing "token" field');
+        break;
+      }
+      const payload = decodeJwtPayload(parsed.token);
+      const quota = extractQuota(payload, configTotal);
+      if (quota) {
+        const result: QuotaResult = { quota };
+        cache = { data: result, fetchedAt: now };
+        return result;
+      }
+      const result: QuotaResult = {
+        quota: null,
+        failReason: 'no-quota-field',
+        failMessage: 'GitHub API returned no premium request quota. Your plan may not expose this data via this endpoint.'
+      };
+      cache = { data: result, fetchedAt: now };
+      return result;
+    } catch (err) {
+      log(`Attempt ${attempt + 1} failed: ${String(err)}`);
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 2 ** attempt * 500));
+    }
   }
-  return data;
+
+  return {
+    quota: null,
+    failReason: 'api-error',
+    failMessage: 'Could not reach GitHub API. Check the Output log (Copilot+) for details.'
+  };
 }
 
 export function invalidateCache(): void {
   cache = null;
 }
+
