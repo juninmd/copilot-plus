@@ -41,37 +41,30 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Determine next tag
+      - name: Determine tag from package.json
         id: tag
         run: |
-          set -e
-          if git describe --tags --match 'v*' --abbrev=0 >/dev/null 2>&1; then
-            last=$(git describe --tags --match 'v*' --abbrev=0)
+          pkg_version=$(node -p "require('./package.json').version")
+          next="v${pkg_version}"
+          echo "package.json version: ${pkg_version} → tag: ${next}"
+          if git tag --list "$next" | grep -q "^${next}$"; then
+            echo "Tag $next already exists — skipping (bump package.json version to release)"
+            echo "skip=true" >> $GITHUB_OUTPUT
           else
-            last='v0.0.0'
+            echo "next=$next" >> $GITHUB_OUTPUT
+            echo "skip=false" >> $GITHUB_OUTPUT
           fi
-          echo "Last tag: $last"
-          if [[ "$last" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            major=${BASH_REMATCH[1]}
-            minor=${BASH_REMATCH[2]}
-            patch=${BASH_REMATCH[3]}
-          else
-            major=0
-            minor=0
-            patch=0
-          fi
-          next="v${major}.${minor}.$((patch + 1))"
-          echo "next=$next" >> $GITHUB_OUTPUT
 
       - name: Create and push tag
+        if: steps.tag.outputs.skip != 'true'
         run: |
-          set -e
           git tag "${{ steps.tag.outputs.next }}"
           git push origin "${{ steps.tag.outputs.next }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub release for new tag
+        if: steps.tag.outputs.skip != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.next }}
