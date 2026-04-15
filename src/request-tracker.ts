@@ -17,6 +17,12 @@ export interface BurnRate {
   daysLeft: number | null;
 }
 
+export interface HistoryEntry {
+  date: string;
+  total: number;
+  models: Record<string, { count: number; cost: number }>;
+}
+
 // Premium request multipliers per model (April 2026)
 // 0 = base model included in plan, no premium cost
 const MULTIPLIERS: Array<{ match: string; cost: number }> = [
@@ -51,6 +57,7 @@ export function detectMultiplier(modelName: string): number {
 
 const TODAY_KEY = 'copilotPlus.todayCost';
 const TODAY_DATE_KEY = 'copilotPlus.todayDate';
+const HISTORY_PREFIX = 'copilotPlus.history.';
 
 export class RequestTracker {
   private sessionCost = 0;
@@ -92,6 +99,7 @@ export class RequestTracker {
 
     const todayCost = (this.state.get<number>(TODAY_KEY) ?? 0) + cost;
     void this.state.update(TODAY_KEY, todayCost);
+    this.saveToHistory(modelName, cost);
   }
 
   getSessionCost(): number {
@@ -109,6 +117,29 @@ export class RequestTracker {
 
   getAuditLog(limit = 20): AuditEntry[] {
     return this.auditLog.slice(0, limit);
+  }
+
+  getHistory(): HistoryEntry[] {
+    const result: HistoryEntry[] = [];
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const date = d.toISOString().slice(0, 10);
+      const entry = this.state.get<HistoryEntry>(`${HISTORY_PREFIX}${date}`);
+      if (entry) result.push(entry);
+    }
+    return result.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  private saveToHistory(modelName: string, cost: number): void {
+    const key = `${HISTORY_PREFIX}${this.today()}`;
+    const entry = this.state.get<HistoryEntry>(key) ?? { date: this.today(), total: 0, models: {} };
+    entry.total += cost;
+    const m = entry.models[modelName] ?? { count: 0, cost: 0 };
+    m.count += 1;
+    m.cost += cost;
+    entry.models[modelName] = m;
+    void this.state.update(key, entry);
   }
 
   getBurnRate(remainingQuota?: number): BurnRate {

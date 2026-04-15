@@ -40,6 +40,12 @@
         "title": "Diagnose Quota Connection",
         "category": "Copilot+",
         "icon": "$(bug)"
+      },
+      {
+        "command": "copilotPlus.showHistory",
+        "title": "Show Usage History",
+        "category": "Copilot+",
+        "icon": "$(history)"
       }
     ],
     "viewsContainers": {
@@ -73,6 +79,11 @@
         {
           "command": "copilotPlus.diagnose",
           "when": "view == copilotPlus.agents",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.showHistory",
+          "when": "view == copilotPlus.agents || view == copilotPlus.models",
           "group": "navigation"
         }
       ]

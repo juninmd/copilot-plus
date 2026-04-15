@@ -6,6 +6,7 @@ import { ModelsExplorerProvider } from './models-explorer';
 import { disposeLogger, log } from './logger';
 import { resetThresholdNotifications } from './model-advisor';
 import { invalidateCache } from './quota-service';
+import { showHistoryPanel } from './history-panel';
 
 export function activate(context: vscode.ExtensionContext): void {
   const tracker = new RequestTracker(context.globalState);
@@ -40,6 +41,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.commands.registerCommand('copilotPlus.diagnose', () => {
       statusBar.showDiagnostics();
+    }),
+
+    vscode.commands.registerCommand('copilotPlus.showHistory', () => {
+      showHistoryPanel(context, tracker);
     })
   );
 
