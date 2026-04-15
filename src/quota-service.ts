@@ -80,7 +80,7 @@ async function httpGet(url: string, token: string): Promise<string> {
   const transferEncoding = res.headers.get('transfer-encoding') ?? 'none';
   log(`HTTP ${res.status} ← ${url} | ct=${contentType} | ce=${contentEncoding} | te=${transferEncoding}`);
 
-  // Read as ArrayBuffer first so we can inspect raw bytes before any decoding
+  // Read as ArrayBuffer to inspect raw bytes before decoding
   const buf = await res.arrayBuffer();
   const bytes = new Uint8Array(buf);
   const hexPreview = Array.from(bytes.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ');
@@ -90,8 +90,10 @@ async function httpGet(url: string, token: string): Promise<string> {
     throw new Error(`HTTP ${res.status}: ${new TextDecoder().decode(bytes).slice(0, 200)}`);
   }
 
-  // Decode as UTF-8 — fetch should have already decompressed via content-encoding
-  return new TextDecoder('utf-8').decode(bytes);
+  const body = new TextDecoder('utf-8').decode(bytes);
+  // Log the first 400 chars so we can see exactly where JSON becomes invalid
+  log(`Body text (first 400): ${body.slice(0, 400)}`);
+  return body;
 }
 
 function decodeJwtPayload(jwt: string): JwtPayload {

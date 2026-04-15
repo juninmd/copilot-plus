@@ -2,7 +2,7 @@
   "name": "copilot-plus",
   "displayName": "Copilot+",
   "description": "Real-time GitHub Copilot quota display, session cost tracking, and agent scope explorer",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "publisher": "juninmd",
   "license": "MIT",
   "repository": {
