@@ -73,12 +73,25 @@ async function httpGet(url: string, token: string): Promise<string> {
     },
     signal: AbortSignal.timeout(8000)
   });
-  log(`HTTP ${res.status} ← ${url}`);
-  const body = await res.text();
+
+  // Log response headers to understand what the server is actually sending
+  const contentType = res.headers.get('content-type') ?? 'n/a';
+  const contentEncoding = res.headers.get('content-encoding') ?? 'none';
+  const transferEncoding = res.headers.get('transfer-encoding') ?? 'none';
+  log(`HTTP ${res.status} ← ${url} | ct=${contentType} | ce=${contentEncoding} | te=${transferEncoding}`);
+
+  // Read as ArrayBuffer first so we can inspect raw bytes before any decoding
+  const buf = await res.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const hexPreview = Array.from(bytes.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+  log(`Body: ${bytes.length} bytes | first bytes hex: ${hexPreview}`);
+
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${body.slice(0, 200)}`);
+    throw new Error(`HTTP ${res.status}: ${new TextDecoder().decode(bytes).slice(0, 200)}`);
   }
-  return body;
+
+  // Decode as UTF-8 — fetch should have already decompressed via content-encoding
+  return new TextDecoder('utf-8').decode(bytes);
 }
 
 function decodeJwtPayload(jwt: string): JwtPayload {
