@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
 import * as http from 'http';
+import * as zlib from 'zlib';
 import { log } from './logger';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -74,20 +75,33 @@ function httpGet(url: string, token: string): Promise<string> {
           Authorization: `Bearer ${token}`,
           'User-Agent': 'copilot-plus-vscode-ext/0.1.0',
           Accept: 'application/json',
+          'Accept-Encoding': 'gzip, deflate, br',
           'X-GitHub-Api-Version': '2022-11-28'
         }
       },
       (res: http.IncomingMessage) => {
-        let body = '';
-        res.on('data', (chunk: { toString(): string }) => (body += chunk.toString()));
-        res.on('end', () => {
-          log(`HTTP ${res.statusCode} ← ${url}`);
+        const encoding = res.headers['content-encoding'];
+        let stream: NodeJS.ReadableStream = res;
+        if (encoding === 'gzip') {
+          stream = res.pipe(zlib.createGunzip());
+        } else if (encoding === 'deflate') {
+          stream = res.pipe(zlib.createInflate());
+        } else if (encoding === 'br') {
+          stream = res.pipe(zlib.createBrotliDecompress());
+        }
+
+        const chunks: Buffer[] = [];
+        stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+        stream.on('end', () => {
+          const body = Buffer.concat(chunks).toString('utf-8');
+          log(`HTTP ${res.statusCode} ← ${url} (encoding: ${encoding ?? 'none'})`);
           if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
             resolve(body);
           } else {
             reject(new Error(`HTTP ${res.statusCode}: ${body.slice(0, 200)}`));
           }
         });
+        stream.on('error', reject);
       }
     );
     req.on('error', reject);
