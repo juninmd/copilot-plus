@@ -46,23 +46,19 @@ interface CacheEntry {
 let cache: CacheEntry | null = null;
 
 async function getGitHubToken(): Promise<string | null> {
-  // Try progressively broader scope sets — the session must include the requested scopes,
-  // so if the stored session was created without 'read:user' we fall back to no required scopes.
-  // NOTE: do NOT pass silent:true — VS Code needs to show the one-time approval notification
-  // the first time this extension requests access to the user's existing GitHub session.
-  const scopeSets: string[][] = [['read:user'], []];
-  for (const scopes of scopeSets) {
-    try {
-      const session = await vscode.authentication.getSession('github', scopes, {
-        createIfNone: false
-      });
-      if (session) {
-        log(`Auth: signed in as ${session.account.label} (scope set: [${scopes.join(', ') || 'any'}])`);
-        return session.accessToken;
-      }
-    } catch {
-      // try next scope set
+  try {
+    // createIfNone: true allows VS Code to show the one-time "Copilot+ wants to sign in
+    // using GitHub" trust prompt. Without this, getSession returns null silently when the
+    // extension hasn't been granted access to the existing session yet.
+    const session = await vscode.authentication.getSession('github', ['read:user'], {
+      createIfNone: true
+    });
+    if (session) {
+      log(`Auth: signed in as ${session.account.label}`);
+      return session.accessToken;
     }
+  } catch (err) {
+    log(`Auth error: ${String(err)}`);
   }
   log('Auth: No GitHub session found. Sign in via VS Code → Accounts.');
   return null;
