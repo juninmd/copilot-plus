@@ -48,12 +48,13 @@ let cache: CacheEntry | null = null;
 async function getGitHubToken(): Promise<string | null> {
   // Try progressively broader scope sets — the session must include the requested scopes,
   // so if the stored session was created without 'read:user' we fall back to no required scopes.
+  // NOTE: do NOT pass silent:true — VS Code needs to show the one-time approval notification
+  // the first time this extension requests access to the user's existing GitHub session.
   const scopeSets: string[][] = [['read:user'], []];
   for (const scopes of scopeSets) {
     try {
       const session = await vscode.authentication.getSession('github', scopes, {
-        createIfNone: false,
-        silent: true
+        createIfNone: false
       });
       if (session) {
         log(`Auth: signed in as ${session.account.label} (scope set: [${scopes.join(', ') || 'any'}])`);
