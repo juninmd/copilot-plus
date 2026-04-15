@@ -1,0 +1,53 @@
+name: Auto Tag Main Commits
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.github/**'
+
+jobs:
+  auto-tag:
+    name: Create semver tag on main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine next tag
+        id: tag
+        run: |
+          set -e
+          if git describe --tags --match 'v*' --abbrev=0 >/dev/null 2>&1; then
+            last=$(git describe --tags --match 'v*' --abbrev=0)
+          else
+            last='v0.0.0'
+          fi
+          echo "Last tag: $last"
+          if [[ "$last" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            major=${BASH_REMATCH[1]}
+            minor=${BASH_REMATCH[2]}
+            patch=${BASH_REMATCH[3]}
+          else
+            major=0
+            minor=0
+            patch=0
+          fi
+          next="v${major}.${minor}.$((patch + 1))"
+          echo "next=$next" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        run: |
+          set -e
+          git tag "${{ steps.tag.outputs.next }}"
+          git push origin "${{ steps.tag.outputs.next }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
