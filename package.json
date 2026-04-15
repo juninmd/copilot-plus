@@ -1,0 +1,99 @@
+{
+  "name": "copilot-plus",
+  "displayName": "Copilot+",
+  "description": "Real-time GitHub Copilot quota display, session cost tracking, and agent scope explorer",
+  "version": "0.1.0",
+  "publisher": "juninmd",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juninmd/copilot-plus"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": ["AI", "Other"],
+  "keywords": ["copilot", "quota", "requests", "agents", "github"],
+  "icon": "resources/icon.png",
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
+  "activationEvents": ["onStartupFinished"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "copilotPlus.refresh",
+        "title": "Refresh Quota",
+        "category": "Copilot+",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "copilotPlus.openAgentExplorer",
+        "title": "Open Agent Explorer",
+        "category": "Copilot+",
+        "icon": "$(extensions)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "copilotPlus",
+          "title": "Copilot+",
+          "icon": "resources/activitybar.svg"
+        }
+      ]
+    },
+    "views": {
+      "copilotPlus": [
+        {
+          "id": "copilotPlus.agents",
+          "name": "Agent Explorer",
+          "icon": "resources/activitybar.svg"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "copilotPlus.refresh",
+          "when": "view == copilotPlus.agents",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Copilot+",
+      "properties": {
+        "copilotPlus.quotaTotal": {
+          "type": "number",
+          "default": 300,
+          "description": "Your total monthly premium request quota (default 300 for Individual plan)"
+        },
+        "copilotPlus.refreshIntervalMinutes": {
+          "type": "number",
+          "default": 15,
+          "minimum": 1,
+          "maximum": 60,
+          "description": "How often to refresh quota from GitHub (minutes)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "pnpm run check-types && node esbuild.js",
+    "check-types": "tsc --noEmit",
+    "watch": "node esbuild.js --watch",
+    "package": "pnpm run check-types && node esbuild.js --production",
+    "vscode:prepublish": "pnpm run package",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.100.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0"
+  }
+}
