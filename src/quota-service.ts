@@ -4,8 +4,8 @@ import * as http from 'http';
 import { log } from './logger';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
-// Correct internal endpoint used by the VS Code Copilot extension itself
-const TOKEN_URL = 'https://api.githubcopilot.com/copilot_internal/v2/token';
+// Internal endpoint used by the VS Code Copilot extension itself
+const TOKEN_URL = 'https://api.github.com/copilot_internal/v2/token';
 
 export interface QuotaInfo {
   total: number;
@@ -25,10 +25,16 @@ export interface QuotaResult {
 
 interface JwtPayload {
   sku?: string;
+  // Free plan fields
   limited_user_quotas?: {
     month?: { chat_requests?: number; used?: number; remaining?: number };
+    chat?: number;
+    completions?: number;
   };
-  chat_quota?: { limit?: number; remaining?: number };
+  // Paid plan fields (monthly_subscriber_quota)
+  quota_snapshots?: Record<string, { used?: number; limit?: number; remaining?: number }>;
+  quota_reset_date?: string;
+  chat_quota?: { limit?: number; remaining?: number; used?: number };
   [key: string]: unknown;
 }
 
@@ -40,20 +46,25 @@ interface CacheEntry {
 let cache: CacheEntry | null = null;
 
 async function getGitHubToken(): Promise<string | null> {
-  try {
-    const session = await vscode.authentication.getSession('github', ['read:user'], {
-      createIfNone: false
-    });
-    if (!session) {
-      log('Auth: No GitHub session found. Sign in via VS Code → Accounts.');
-      return null;
+  // Try progressively broader scope sets — the session must include the requested scopes,
+  // so if the stored session was created without 'read:user' we fall back to no required scopes.
+  const scopeSets: string[][] = [['read:user'], []];
+  for (const scopes of scopeSets) {
+    try {
+      const session = await vscode.authentication.getSession('github', scopes, {
+        createIfNone: false,
+        silent: true
+      });
+      if (session) {
+        log(`Auth: signed in as ${session.account.label} (scope set: [${scopes.join(', ') || 'any'}])`);
+        return session.accessToken;
+      }
+    } catch {
+      // try next scope set
     }
-    log(`Auth: signed in as ${session.account.label}`);
-    return session.accessToken;
-  } catch (err) {
-    log(`Auth error: ${String(err)}`);
-    return null;
   }
+  log('Auth: No GitHub session found. Sign in via VS Code → Accounts.');
+  return null;
 }
 
 function httpGet(url: string, token: string): Promise<string> {
@@ -101,24 +112,41 @@ function decodeJwtPayload(jwt: string): JwtPayload {
 function extractQuota(payload: JwtPayload, configTotal: number): QuotaInfo | null {
   log(`JWT keys: [${Object.keys(payload).join(', ')}] | sku: ${payload.sku ?? 'n/a'}`);
 
+  // 1. Free plan: limited_user_quotas.month (chat_requests / used / remaining)
   const month = payload.limited_user_quotas?.month;
   if (month && (month.remaining !== undefined || month.chat_requests !== undefined)) {
     const total = month.chat_requests ?? configTotal;
     const remaining = month.remaining ?? total;
     const used = month.used ?? (total - remaining);
-    log(`Quota found: ${remaining}/${total} remaining`);
+    log(`Quota via limited_user_quotas.month: ${remaining}/${total}`);
     return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
   }
 
-  const alt = payload.chat_quota;
-  if (alt?.remaining !== undefined) {
-    const total = alt.limit ?? configTotal;
-    const remaining = alt.remaining;
-    log(`Quota found (alt field): ${remaining}/${total}`);
-    return { total, used: total - remaining, remaining, percentUsed: Math.round(((total - remaining) / total) * 100), source: 'api' };
+  // 2. Paid plan (monthly_subscriber_quota): chat_quota
+  const cq = payload.chat_quota;
+  if (cq?.remaining !== undefined) {
+    const total = cq.limit ?? configTotal;
+    const remaining = cq.remaining;
+    const used = cq.used ?? (total - remaining);
+    log(`Quota via chat_quota: ${remaining}/${total}`);
+    return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
   }
 
-  log('No quota fields in JWT. Plan may not expose premium request data.');
+  // 3. Paid plan: quota_snapshots (keyed object, pick 'chat' or first entry)
+  const snaps = payload.quota_snapshots;
+  if (snaps) {
+    const entry = snaps['chat'] ?? snaps[Object.keys(snaps)[0]];
+    if (entry?.remaining !== undefined) {
+      const total = entry.limit ?? configTotal;
+      const remaining = entry.remaining;
+      const used = entry.used ?? (total - remaining);
+      log(`Quota via quota_snapshots: ${remaining}/${total}`);
+      return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
+    }
+  }
+
+  // No quota fields found — log full payload keys to help diagnose
+  log(`No quota fields found. Full payload: ${JSON.stringify(payload, null, 0).slice(0, 500)}`);
   return null;
 }
 
