@@ -29,7 +29,7 @@ function normalizeP(p: string): string {
 function detectScope(ext: vscode.Extension<unknown>): AgentScope {
   const extId = ext.id.toLowerCase();
 
-  if (BUILTIN_EXTENSION_IDS.has(extId) || extId.startsWith('ms-vscode.')) {
+  if (BUILTIN_EXTENSION_IDS.has(extId) || extId.startsWith('ms-vscode.') || extId.startsWith('vscode.')) {
     return 'built-in';
   }
 
