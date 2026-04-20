@@ -58,7 +58,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   // Log available models on startup for runtime family-string discovery
-  vscode.lm.selectChatModels({ vendor: 'copilot' }).then(
+  vscode.lm.selectChatModels().then(
     (models) => tracker.logAvailableModels(models),
     () => log('vscode.lm not available at startup')
   );
@@ -67,7 +67,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.lm.onDidChangeChatModels(() => {
       modelsExplorer.refresh();
       resetThresholdNotifications(); // reset per model-set change
-      vscode.lm.selectChatModels({ vendor: 'copilot' }).then(
+      vscode.lm.selectChatModels().then(
         (models) => tracker.logAvailableModels(models),
         () => { /* ignore */ }
       );
