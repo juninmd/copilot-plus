@@ -13,7 +13,7 @@ export function resetThresholdNotifications(): void {
 
 async function cheapestModel(): Promise<{ name: string; cost: number } | null> {
   try {
-    const models = await vscode.lm.selectChatModels({ vendor: 'copilot' });
+    const models = await vscode.lm.selectChatModels();
     const candidates = models
       .map((m) => ({ name: m.name, cost: detectMultiplier(m.name) }))
       .filter((m) => m.cost < 1)

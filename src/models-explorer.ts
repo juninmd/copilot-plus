@@ -94,7 +94,7 @@ export class ModelsExplorerProvider implements vscode.TreeDataProvider<Node> {
   private async buildRoot(): Promise<Node[]> {
     let models: vscode.LanguageModelChat[] = [];
     try {
-      models = await vscode.lm.selectChatModels({ vendor: 'copilot' });
+      models = await vscode.lm.selectChatModels();
     } catch {
       /* Copilot not available */
     }
