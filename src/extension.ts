@@ -4,6 +4,7 @@ import { StatusBarProvider } from './status-bar';
 import { AgentExplorerProvider } from './agent-explorer';
 import { ModelsExplorerProvider } from './models-explorer';
 import { ToolsExplorerProvider } from './tools-explorer';
+import { McpExplorerProvider } from './mcp-explorer';
 import { disposeLogger, log } from './logger';
 import { resetThresholdNotifications } from './model-advisor';
 import { invalidateCache } from './quota-service';
@@ -15,6 +16,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const agentExplorer = new AgentExplorerProvider();
   const modelsExplorer = new ModelsExplorerProvider();
   const toolsExplorer = new ToolsExplorerProvider();
+  const mcpExplorer = new McpExplorerProvider();
 
   const agentTree = vscode.window.createTreeView('copilotPlus.agents', {
     treeDataProvider: agentExplorer,
@@ -31,12 +33,18 @@ export function activate(context: vscode.ExtensionContext): void {
     showCollapseAll: false
   });
 
+  const mcpsTree = vscode.window.createTreeView('copilotPlus.mcps', {
+    treeDataProvider: mcpExplorer,
+    showCollapseAll: false
+  });
+
   context.subscriptions.push(
     vscode.commands.registerCommand('copilotPlus.refresh', async () => {
       invalidateCache();
       agentExplorer.refresh();
       modelsExplorer.refresh();
       toolsExplorer.refresh();
+      mcpExplorer.refresh();
       await statusBar.refresh();
     }),
 
@@ -44,6 +52,7 @@ export function activate(context: vscode.ExtensionContext): void {
       agentExplorer.refresh();
       modelsExplorer.refresh();
       toolsExplorer.refresh();
+      mcpExplorer.refresh();
       await vscode.commands.executeCommand('copilotPlus.agents.focus');
       await statusBar.refresh();
     }),
@@ -81,7 +90,7 @@ export function activate(context: vscode.ExtensionContext): void {
   statusBar.render();
   void statusBar.refresh();
 
-  context.subscriptions.push(statusBar, agentTree, modelsTree, toolsTree);
+  context.subscriptions.push(statusBar, agentTree, modelsTree, toolsTree, mcpsTree);
   log('Copilot+ activated. Run "Copilot+: Diagnose" to inspect quota data.');
 }
 
