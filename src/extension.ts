@@ -9,6 +9,7 @@ import { disposeLogger, log } from './logger';
 import { resetThresholdNotifications } from './model-advisor';
 import { invalidateCache } from './quota-service';
 import { showHistoryPanel } from './history-panel';
+import { applyTurboSettings } from './turbo';
 
 export function activate(context: vscode.ExtensionContext): void {
   const tracker = new RequestTracker(context.globalState);
@@ -39,6 +40,10 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('copilotPlus.turbo', () => {
+      applyTurboSettings();
+    }),
+
     vscode.commands.registerCommand('copilotPlus.refresh', async () => {
       invalidateCache();
       agentExplorer.refresh();
@@ -86,6 +91,10 @@ export function activate(context: vscode.ExtensionContext): void {
   const config = vscode.workspace.getConfiguration('copilotPlus');
   const intervalMinutes: number = config.get('refreshIntervalMinutes', 15);
   statusBar.startAutoRefresh(intervalMinutes);
+
+  if (config.get('autoTurbo', false)) {
+    applyTurboSettings();
+  }
 
   statusBar.render();
   void statusBar.refresh();
