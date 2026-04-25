@@ -3,6 +3,9 @@ import { log } from './logger';
 
 export async function applyTurboSettings(): Promise<void> {
   const settings = [
+    // 1.118 Updates
+    { key: 'github.copilot.chat.cli.autoModel.enabled', value: true },
+
     // 1.117 Updates
     { key: 'chat.experimental.incrementalRendering.enabled', value: true },
     { key: 'chat.experimental.incrementalRendering.animationStyle', value: 'reveal' },
