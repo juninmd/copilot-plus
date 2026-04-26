@@ -6,6 +6,16 @@ export async function applyTurboSettings(): Promise<void> {
     // 1.118 Updates
     { key: 'github.copilot.chat.cli.autoModel.enabled', value: true },
 
+    // Extra Proactive 1.118+ Turbo settings
+    { key: 'chat.experimental.detectParticipant.enabled', value: true },
+    { key: 'chat.experimental.renderMarkdownImmediately', value: true },
+    { key: 'chat.experimental.serverlessWebEnabled', value: true },
+    { key: 'chat.experimental.useSkillAdherencePrompt', value: true },
+    { key: 'chat.tools.autoExpandFailures', value: true },
+    { key: 'chat.tools.edits.autoApprove', value: true },
+    { key: 'chat.tools.urls.autoApprove', value: true },
+
+
     // 1.117 Updates
     { key: 'chat.experimental.incrementalRendering.enabled', value: true },
     { key: 'chat.experimental.incrementalRendering.animationStyle', value: 'reveal' },
