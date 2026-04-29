@@ -5,6 +5,14 @@ export async function applyTurboSettings(): Promise<void> {
   const settings = [
     // 1.118 Updates
     { key: 'github.copilot.chat.cli.autoModel.enabled', value: true },
+    { key: 'github.copilot.chat.cli.remote.enabled', value: true },
+    { key: 'github.copilot.chat.skillTool.enabled', value: true },
+    { key: 'chat.experimental.symbolTools.cacheStable', value: true },
+    { key: 'github.copilot.chat.anthropic.cacheBreakpoints.lastTwoMessages', value: true },
+    { key: 'github.copilot.chat.responsesApi.toolSearchTool.enabled', value: true },
+    { key: 'github.copilot.chat.localIndex.enabled', value: true },
+    { key: 'accessibility.verbosity.chatQuestionCarousel', value: true },
+    { key: 'git.addAICoAuthor', value: true },
 
     // Extra Proactive 1.118+ Turbo settings
     { key: 'chat.experimental.detectParticipant.enabled', value: true },
