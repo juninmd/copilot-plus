@@ -3,6 +3,13 @@ import { log } from './logger';
 
 export async function applyTurboSettings(): Promise<void> {
   const settings = [
+    // 1.119 Updates
+    { key: 'sessions.developerJoy.enabled', value: true },
+    { key: 'github.copilot.chat.otel.enabled', value: true },
+    { key: 'github.copilot.chat.agent.modelDetails.enabled', value: true },
+    { key: 'github.copilot.chat.agent.backgroundTodoAgent.enabled', value: true },
+    { key: 'chat.agent.sandbox.enabled', value: 'allowNetwork' },
+
     // 1.118 Updates
     { key: 'github.copilot.chat.cli.autoModel.enabled', value: true },
     { key: 'github.copilot.chat.cli.remote.enabled', value: true },
