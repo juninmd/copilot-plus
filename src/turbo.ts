@@ -2,7 +2,21 @@ import * as vscode from 'vscode';
 import { log } from './logger';
 
 export async function applyTurboSettings(): Promise<void> {
-  const settings = [
+  const settings: Array<{ key: string, value: any }> = [
+    // 1.120 Updates
+    { key: 'chat.tools.compressOutput.enabled', value: true },
+    { key: 'chat.tools.riskAssessment.enabled', value: true },
+    { key: 'chat.planWidget.inlineEditor.enabled', value: true },
+    { key: 'extensions.supportAgentsWindow', value: { 'juninmd.copilot-plus': true } },
+    { key: 'workbench.diffEditorAssociations', value: { '*.md': 'vscode.markdown.preview.editor' } },
+
+    // 1.119 Updates
+    { key: 'github.copilot.chat.otel.enabled', value: true },
+    { key: 'github.copilot.chat.agent.modelDetails.enabled', value: true },
+    { key: 'github.copilot.chat.agent.backgroundTodoAgent.enabled', value: true },
+    { key: 'chat.agent.sandbox.enabled', value: 'allowNetwork' },
+    { key: 'sessions.developerJoy.enabled', value: true },
+
     // 1.118 Updates
     { key: 'github.copilot.chat.cli.autoModel.enabled', value: true },
     { key: 'github.copilot.chat.cli.remote.enabled', value: true },
@@ -42,9 +56,21 @@ export async function applyTurboSettings(): Promise<void> {
 
   for (const { key, value } of settings) {
     const currentValue = config.inspect(key)?.globalValue;
-    if (currentValue !== value) {
+
+    let valueToSet = value;
+    let shouldUpdate = false;
+
+    if (typeof value === 'object' && value !== null) {
+      const currentObj = (typeof currentValue === 'object' && currentValue !== null) ? currentValue : {};
+      valueToSet = { ...currentObj, ...value };
+      shouldUpdate = Object.entries(value).some(([k, v]) => (currentObj as any)[k] !== v);
+    } else {
+      shouldUpdate = currentValue !== value;
+    }
+
+    if (shouldUpdate) {
       try {
-        await config.update(key, value, vscode.ConfigurationTarget.Global);
+        await config.update(key, valueToSet, vscode.ConfigurationTarget.Global);
         updated++;
       } catch (e) {
         log(`Failed to update setting ${key}: ${e}`);
