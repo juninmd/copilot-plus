@@ -3,6 +3,19 @@ import { log } from './logger';
 
 export async function applyTurboSettings(): Promise<void> {
   const settings: Array<{ key: string, value: any }> = [
+    // 1.121 Updates
+    { key: 'github.copilot.chat.claudeAgent.allowAutoPermissions', value: true },
+    { key: 'github.copilot.chat.claudeAgent.allowDangerouslySkipPermissions', value: false },
+    { key: 'markdown.preview.frontMatter', value: 'table' },
+    {
+      key: 'editor.quickSuggestions',
+      value: {
+        other: 'on',
+        comments: 'off',
+        strings: 'off'
+      }
+    },
+
     // 1.120 Updates
     { key: 'chat.tools.compressOutput.enabled', value: true },
     { key: 'chat.tools.riskAssessment.enabled', value: true },
@@ -55,26 +68,8 @@ export async function applyTurboSettings(): Promise<void> {
   let updated = 0;
 
   for (const { key, value } of settings) {
-    const currentValue = config.inspect(key)?.globalValue;
-
-    let valueToSet = value;
-    let shouldUpdate = false;
-
-    if (typeof value === 'object' && value !== null) {
-      const currentObj = (typeof currentValue === 'object' && currentValue !== null) ? currentValue : {};
-      valueToSet = { ...currentObj, ...value };
-      shouldUpdate = Object.entries(value).some(([k, v]) => (currentObj as any)[k] !== v);
-    } else {
-      shouldUpdate = currentValue !== value;
-    }
-
-    if (shouldUpdate) {
-      try {
-        await config.update(key, valueToSet, vscode.ConfigurationTarget.Global);
-        updated++;
-      } catch (e) {
-        log(`Failed to update setting ${key}: ${e}`);
-      }
+    if (await applySettingIfChanged(config, key, value)) {
+      updated++;
     }
   }
 
@@ -82,4 +77,34 @@ export async function applyTurboSettings(): Promise<void> {
     log(`Turbo mode: Updated ${updated} settings to bleeding edge Copilot features.`);
     vscode.window.showInformationMessage(`Copilot+ Turbo: Enabled ${updated} experimental features!`);
   }
+}
+
+/**
+ * Applies a setting if it differs from the current configuration value, handling object merges.
+ * Returns true if the setting was successfully updated, false otherwise.
+ */
+async function applySettingIfChanged(config: vscode.WorkspaceConfiguration, key: string, value: any): Promise<boolean> {
+  const currentValue = config.inspect(key)?.globalValue;
+
+  let valueToSet = value;
+  let shouldUpdate = false;
+
+  if (typeof value === 'object' && value !== null) {
+    const currentObj = (typeof currentValue === 'object' && currentValue !== null) ? currentValue : {};
+    valueToSet = { ...currentObj, ...value };
+    shouldUpdate = Object.entries(value).some(([k, v]) => (currentObj as any)[k] !== v);
+  } else {
+    shouldUpdate = currentValue !== value;
+  }
+
+  if (shouldUpdate) {
+    try {
+      await config.update(key, valueToSet, vscode.ConfigurationTarget.Global);
+      return true;
+    } catch (e) {
+      log(`Failed to update setting ${key}: ${e}`);
+    }
+  }
+
+  return false;
 }
