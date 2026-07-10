@@ -1,8 +1,52 @@
 import * as vscode from 'vscode';
 import { log } from './logger';
 
+class TurboSettingsApplier {
+  private config = vscode.workspace.getConfiguration();
+  private updated = 0;
+
+  async applyAll(settings: Array<{ key: string, value: any }>): Promise<number> {
+    for (const { key, value } of settings) {
+      if (await this.applySettingIfChanged(key, value)) {
+        this.updated++;
+      }
+    }
+    return this.updated;
+  }
+
+  private async applySettingIfChanged(key: string, value: any): Promise<boolean> {
+    const currentValue = this.config.inspect(key)?.globalValue;
+    let valueToSet = value;
+    let shouldUpdate = false;
+
+    if (typeof value === 'object' && value !== null) {
+      const currentObj = (typeof currentValue === 'object' && currentValue !== null) ? currentValue : {};
+      valueToSet = { ...currentObj, ...value };
+      shouldUpdate = Object.entries(value).some(([k, v]) => (currentObj as any)[k] !== v);
+    } else {
+      shouldUpdate = currentValue !== value;
+    }
+
+    if (shouldUpdate) {
+      try {
+        await this.config.update(key, valueToSet, vscode.ConfigurationTarget.Global);
+        return true;
+      } catch (e) {
+        log(`Failed to update setting ${key}: ${e}`);
+      }
+    }
+    return false;
+  }
+}
+
 export async function applyTurboSettings(): Promise<void> {
   const settings: Array<{ key: string, value: any }> = [
+    // 1.128 Updates
+    { key: 'chat.agentHost.enabled', value: true },
+    { key: 'sessions.list.showEmptyDefaultGroups', value: false },
+    { key: 'chat.agentHost.byokModels.enabled', value: true },
+    { key: 'workbench.browser.newTabPlacement', value: 'window' },
+
     // 1.121 Updates
     { key: 'github.copilot.chat.claudeAgent.allowAutoPermissions', value: true },
     { key: 'github.copilot.chat.claudeAgent.allowDangerouslySkipPermissions', value: false },
@@ -64,47 +108,11 @@ export async function applyTurboSettings(): Promise<void> {
     { key: 'jsts-chat-features.skills.enabled', value: true },
   ];
 
-  const config = vscode.workspace.getConfiguration();
-  let updated = 0;
-
-  for (const { key, value } of settings) {
-    if (await applySettingIfChanged(config, key, value)) {
-      updated++;
-    }
-  }
+  const applier = new TurboSettingsApplier();
+  const updated = await applier.applyAll(settings);
 
   if (updated > 0) {
     log(`Turbo mode: Updated ${updated} settings to bleeding edge Copilot features.`);
     vscode.window.showInformationMessage(`Copilot+ Turbo: Enabled ${updated} experimental features!`);
   }
-}
-
-/**
- * Applies a setting if it differs from the current configuration value, handling object merges.
- * Returns true if the setting was successfully updated, false otherwise.
- */
-async function applySettingIfChanged(config: vscode.WorkspaceConfiguration, key: string, value: any): Promise<boolean> {
-  const currentValue = config.inspect(key)?.globalValue;
-
-  let valueToSet = value;
-  let shouldUpdate = false;
-
-  if (typeof value === 'object' && value !== null) {
-    const currentObj = (typeof currentValue === 'object' && currentValue !== null) ? currentValue : {};
-    valueToSet = { ...currentObj, ...value };
-    shouldUpdate = Object.entries(value).some(([k, v]) => (currentObj as any)[k] !== v);
-  } else {
-    shouldUpdate = currentValue !== value;
-  }
-
-  if (shouldUpdate) {
-    try {
-      await config.update(key, valueToSet, vscode.ConfigurationTarget.Global);
-      return true;
-    } catch (e) {
-      log(`Failed to update setting ${key}: ${e}`);
-    }
-  }
-
-  return false;
 }
