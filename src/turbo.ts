@@ -2,34 +2,33 @@ import * as vscode from 'vscode';
 import { log } from './logger';
 
 class TurboSettingsApplier {
-  private config = vscode.workspace.getConfiguration();
-  private updated = 0;
-
-  async applyAll(settings: Array<{ key: string, value: any }>): Promise<number> {
+  async applyAll(settings: Array<{ key: string, value: unknown }>): Promise<number> {
+    const config = vscode.workspace.getConfiguration();
+    let updated = 0;
     for (const { key, value } of settings) {
-      if (await this.applySettingIfChanged(key, value)) {
-        this.updated++;
+      if (await this.applySettingIfChanged(config, key, value)) {
+        updated++;
       }
     }
-    return this.updated;
+    return updated;
   }
 
-  private async applySettingIfChanged(key: string, value: any): Promise<boolean> {
-    const currentValue = this.config.inspect(key)?.globalValue;
+  private async applySettingIfChanged(config: vscode.WorkspaceConfiguration, key: string, value: unknown): Promise<boolean> {
+    const currentValue = config.inspect(key)?.globalValue;
     let valueToSet = value;
     let shouldUpdate = false;
 
     if (typeof value === 'object' && value !== null) {
-      const currentObj = (typeof currentValue === 'object' && currentValue !== null) ? currentValue : {};
-      valueToSet = { ...currentObj, ...value };
-      shouldUpdate = Object.entries(value).some(([k, v]) => (currentObj as any)[k] !== v);
+      const currentObj = (typeof currentValue === 'object' && currentValue !== null) ? currentValue as Record<string, unknown> : {};
+      valueToSet = { ...currentObj, ...value as Record<string, unknown> };
+      shouldUpdate = Object.entries(value as Record<string, unknown>).some(([k, v]) => currentObj[k] !== v);
     } else {
       shouldUpdate = currentValue !== value;
     }
 
     if (shouldUpdate) {
       try {
-        await this.config.update(key, valueToSet, vscode.ConfigurationTarget.Global);
+        await config.update(key, valueToSet, vscode.ConfigurationTarget.Global);
         return true;
       } catch (e) {
         log(`Failed to update setting ${key}: ${e}`);
@@ -40,9 +39,10 @@ class TurboSettingsApplier {
 }
 
 export async function applyTurboSettings(): Promise<void> {
-  const settings: Array<{ key: string, value: any }> = [
+  const settings: Array<{ key: string, value: unknown }> = [
     // 1.128 Updates
     { key: 'chat.agentHost.enabled', value: true },
+    { key: 'chat.agents.claude.preferAgentHost', value: true },
     { key: 'sessions.list.showEmptyDefaultGroups', value: false },
     { key: 'chat.agentHost.byokModels.enabled', value: true },
     { key: 'workbench.browser.newTabPlacement', value: 'window' },
