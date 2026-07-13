@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { HistoryEntry, RequestTracker } from './request-tracker';
+import type { HistoryEntry, RequestTracker } from '../core/request-tracker';
 
 let activePanel: vscode.WebviewPanel | undefined;
 

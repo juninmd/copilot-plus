@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { detectScope, scopeLabel, scopeIcon, ExtensionScope } from './scope-detector';
+import { detectScope, scopeLabel, scopeIcon, ExtensionScope } from '../core/scope-detector';
 
 export interface McpProviderEntry {
   id: string;
