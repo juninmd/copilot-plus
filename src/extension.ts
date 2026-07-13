@@ -1,15 +1,15 @@
 import * as vscode from 'vscode';
-import { RequestTracker } from './request-tracker';
-import { StatusBarProvider } from './status-bar';
-import { AgentExplorerProvider } from './agent-explorer';
-import { ModelsExplorerProvider } from './models-explorer';
-import { ToolsExplorerProvider } from './tools-explorer';
-import { McpExplorerProvider } from './mcp-explorer';
-import { disposeLogger, log } from './logger';
-import { resetThresholdNotifications } from './model-advisor';
-import { invalidateCache } from './quota-service';
-import { showHistoryPanel } from './history-panel';
-import { applyTurboSettings } from './turbo';
+import { RequestTracker } from './core/request-tracker';
+import { StatusBarProvider } from './ui/status-bar';
+import { AgentExplorerProvider } from './providers/agent-explorer';
+import { ModelsExplorerProvider } from './providers/models-explorer';
+import { ToolsExplorerProvider } from './providers/tools-explorer';
+import { McpExplorerProvider } from './providers/mcp-explorer';
+import { disposeLogger, log } from './core/logger';
+import { resetThresholdNotifications } from './core/model-advisor';
+import { invalidateCache } from './core/quota-service';
+import { showHistoryPanel } from './ui/history-panel';
+import { applyTurboSettings } from './core/turbo';
 
 export function activate(context: vscode.ExtensionContext): void {
   const tracker = new RequestTracker(context.globalState);

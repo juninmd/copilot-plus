@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { detectMultiplier } from './request-tracker';
+import { detectMultiplier } from '../core/request-tracker';
 
 type CostTier = 'free' | 'lite' | 'standard' | 'premium';
 

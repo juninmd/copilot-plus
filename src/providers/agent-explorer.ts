@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ExtensionScope, detectScope, scopeIcon, scopeLabel } from './scope-detector';
+import { ExtensionScope, detectScope, scopeIcon, scopeLabel } from '../core/scope-detector';
 
 export type AgentScope = ExtensionScope;
 

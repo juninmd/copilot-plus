@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { fetchQuota, invalidateCache, type QuotaInfo, type QuotaResult } from './quota-service';
-import { type RequestTracker } from './request-tracker';
-import { showLogs } from './logger';
-import { checkThresholds } from './model-advisor';
+import { fetchQuota, invalidateCache, type QuotaInfo, type QuotaResult } from '../core/quota-service';
+import { type RequestTracker } from '../core/request-tracker';
+import { showLogs } from '../core/logger';
+import { checkThresholds } from '../core/model-advisor';
 
 function fmt(n: number): string {
   return n % 1 === 0 ? n.toString() : n.toFixed(2);
