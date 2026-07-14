@@ -1,23 +1,21 @@
 import * as vscode from 'vscode';
 
-let ch: vscode.OutputChannel | undefined;
+export class Logger implements vscode.Disposable {
+  private ch: vscode.OutputChannel;
 
-export function getOutputChannel(): vscode.OutputChannel {
-  if (!ch) {
-    ch = vscode.window.createOutputChannel('Copilot+');
+  constructor() {
+    this.ch = vscode.window.createOutputChannel('Copilot+');
   }
-  return ch;
-}
 
-export function log(msg: string): void {
-  getOutputChannel().appendLine(`[${new Date().toLocaleTimeString()}] ${msg}`);
-}
+  log(msg: string): void {
+    this.ch.appendLine(`[${new Date().toLocaleTimeString()}] ${msg}`);
+  }
 
-export function showLogs(): void {
-  getOutputChannel().show(true);
-}
+  showLogs(): void {
+    this.ch.show(true);
+  }
 
-export function disposeLogger(): void {
-  ch?.dispose();
-  ch = undefined;
+  dispose(): void {
+    this.ch.dispose();
+  }
 }

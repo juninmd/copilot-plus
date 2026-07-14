@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { log } from './logger';
+import { Logger } from './logger';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 // Internal endpoint used by the VS Code Copilot extension itself
@@ -43,7 +43,7 @@ interface CacheEntry {
 
 let cache: CacheEntry | null = null;
 
-async function getGitHubToken(): Promise<string | null> {
+async function getGitHubToken(logger: Logger): Promise<string | null> {
   try {
     // createIfNone: true allows VS Code to show the one-time "Copilot+ wants to sign in
     // using GitHub" trust prompt. Without this, getSession returns null silently when the
@@ -52,17 +52,17 @@ async function getGitHubToken(): Promise<string | null> {
       createIfNone: true
     });
     if (session) {
-      log(`Auth: signed in as ${session.account.label}`);
+      logger.log(`Auth: signed in as ${session.account.label}`);
       return session.accessToken;
     }
   } catch (err) {
-    log(`Auth error: ${String(err)}`);
+    logger.log(`Auth error: ${String(err)}`);
   }
-  log('Auth: No GitHub session found. Sign in via VS Code → Accounts.');
+  logger.log('Auth: No GitHub session found. Sign in via VS Code → Accounts.');
   return null;
 }
 
-async function httpGet(url: string, token: string): Promise<string> {
+async function httpGet(url: string, token: string, logger: Logger): Promise<string> {
   const res = await fetch(url, {
     method: 'GET',
     headers: {
@@ -78,13 +78,13 @@ async function httpGet(url: string, token: string): Promise<string> {
   const contentType = res.headers.get('content-type') ?? 'n/a';
   const contentEncoding = res.headers.get('content-encoding') ?? 'none';
   const transferEncoding = res.headers.get('transfer-encoding') ?? 'none';
-  log(`HTTP ${res.status} ← ${url} | ct=${contentType} | ce=${contentEncoding} | te=${transferEncoding}`);
+  logger.log(`HTTP ${res.status} ← ${url} | ct=${contentType} | ce=${contentEncoding} | te=${transferEncoding}`);
 
   // Read as ArrayBuffer to inspect raw bytes before decoding
   const buf = await res.arrayBuffer();
   const bytes = new Uint8Array(buf);
   const hexPreview = Array.from(bytes.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ');
-  log(`Body: ${bytes.length} bytes | first bytes hex: ${hexPreview}`);
+  logger.log(`Body: ${bytes.length} bytes | first bytes hex: ${hexPreview}`);
 
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}: ${new TextDecoder().decode(bytes).slice(0, 200)}`);
@@ -92,7 +92,7 @@ async function httpGet(url: string, token: string): Promise<string> {
 
   const body = new TextDecoder('utf-8').decode(bytes);
   // Log the first 400 chars so we can see exactly where JSON becomes invalid
-  log(`Body text (first 400): ${body.slice(0, 400)}`);
+  logger.log(`Body text (first 400): ${body.slice(0, 400)}`);
   return body;
 }
 
@@ -106,8 +106,8 @@ function decodeJwtPayload(jwt: string): JwtPayload {
   return JSON.parse((globalThis as any).Buffer.from(padded, 'base64').toString('utf-8')) as JwtPayload;
 }
 
-function extractQuota(payload: JwtPayload, configTotal: number): QuotaInfo | null {
-  log(`JWT keys: [${Object.keys(payload).join(', ')}] | sku: ${payload.sku ?? 'n/a'}`);
+function extractQuota(payload: JwtPayload, configTotal: number, logger: Logger): QuotaInfo | null {
+  logger.log(`JWT keys: [${Object.keys(payload).join(', ')}] | sku: ${payload.sku ?? 'n/a'}`);
 
   // 1. Free plan: limited_user_quotas.month (chat_requests / used / remaining)
   const month = payload.limited_user_quotas?.month;
@@ -115,7 +115,7 @@ function extractQuota(payload: JwtPayload, configTotal: number): QuotaInfo | nul
     const total = month.chat_requests ?? configTotal;
     const remaining = month.remaining ?? total;
     const used = month.used ?? (total - remaining);
-    log(`Quota via limited_user_quotas.month: ${remaining}/${total}`);
+    logger.log(`Quota via limited_user_quotas.month: ${remaining}/${total}`);
     return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
   }
 
@@ -125,7 +125,7 @@ function extractQuota(payload: JwtPayload, configTotal: number): QuotaInfo | nul
     const total = cq.limit ?? configTotal;
     const remaining = cq.remaining;
     const used = cq.used ?? (total - remaining);
-    log(`Quota via chat_quota: ${remaining}/${total}`);
+    logger.log(`Quota via chat_quota: ${remaining}/${total}`);
     return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
   }
 
@@ -137,17 +137,17 @@ function extractQuota(payload: JwtPayload, configTotal: number): QuotaInfo | nul
       const total = entry.limit ?? configTotal;
       const remaining = entry.remaining;
       const used = entry.used ?? (total - remaining);
-      log(`Quota via quota_snapshots: ${remaining}/${total}`);
+      logger.log(`Quota via quota_snapshots: ${remaining}/${total}`);
       return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
     }
   }
 
   // No quota fields found — log full payload keys to help diagnose
-  log(`No quota fields found. Full payload: ${JSON.stringify(payload, null, 0).slice(0, 500)}`);
+  logger.log(`No quota fields found. Full payload: ${JSON.stringify(payload, null, 0).slice(0, 500)}`);
   return null;
 }
 
-export async function fetchQuota(forceRefresh = false): Promise<QuotaResult> {
+export async function fetchQuota(logger: Logger, forceRefresh = false): Promise<QuotaResult> {
   const configTotal = vscode.workspace.getConfiguration('copilotPlus').get<number>('quotaTotal') ?? 300;
   const now = Date.now();
 
@@ -155,7 +155,7 @@ export async function fetchQuota(forceRefresh = false): Promise<QuotaResult> {
     return cache.data;
   }
 
-  const token = await getGitHubToken();
+  const token = await getGitHubToken(logger);
   if (!token) {
     return {
       quota: null,
@@ -166,14 +166,14 @@ export async function fetchQuota(forceRefresh = false): Promise<QuotaResult> {
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const body = await httpGet(TOKEN_URL, token);
+      const body = await httpGet(TOKEN_URL, token, logger);
       const parsed = JSON.parse(body) as { token?: string };
       if (!parsed.token) {
-        log('API response missing "token" field');
+        logger.log('API response missing "token" field');
         break;
       }
       const payload = decodeJwtPayload(parsed.token);
-      const quota = extractQuota(payload, configTotal);
+      const quota = extractQuota(payload, configTotal, logger);
       if (quota) {
         const result: QuotaResult = { quota };
         cache = { data: result, fetchedAt: now };
@@ -187,7 +187,7 @@ export async function fetchQuota(forceRefresh = false): Promise<QuotaResult> {
       cache = { data: result, fetchedAt: now };
       return result;
     } catch (err) {
-      log(`Attempt ${attempt + 1} failed: ${String(err)}`);
+      logger.log(`Attempt ${attempt + 1} failed: ${String(err)}`);
       if (attempt < 2) await new Promise((r) => setTimeout(r, 2 ** attempt * 500));
     }
   }
