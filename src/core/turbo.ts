@@ -1,19 +1,19 @@
 import * as vscode from 'vscode';
-import { log } from './logger';
+import { Logger } from './logger';
 
 class TurboSettingsApplier {
-  async applyAll(settings: Array<{ key: string, value: unknown }>): Promise<number> {
+  async applyAll(settings: Array<{ key: string, value: unknown }>, logger: Logger): Promise<number> {
     const config = vscode.workspace.getConfiguration();
     let updated = 0;
     for (const { key, value } of settings) {
-      if (await this.applySettingIfChanged(config, key, value)) {
+      if (await this.applySettingIfChanged(config, key, value, logger)) {
         updated++;
       }
     }
     return updated;
   }
 
-  private async applySettingIfChanged(config: vscode.WorkspaceConfiguration, key: string, value: unknown): Promise<boolean> {
+  private async applySettingIfChanged(config: vscode.WorkspaceConfiguration, key: string, value: unknown, logger: Logger): Promise<boolean> {
     const currentValue = config.inspect(key)?.globalValue;
     let valueToSet = value;
     let shouldUpdate = false;
@@ -31,17 +31,20 @@ class TurboSettingsApplier {
         await config.update(key, valueToSet, vscode.ConfigurationTarget.Global);
         return true;
       } catch (e) {
-        log(`Failed to update setting ${key}: ${e}`);
+        logger.log(`Failed to update setting ${key}: ${e}`);
       }
     }
     return false;
   }
 }
 
-export async function applyTurboSettings(): Promise<void> {
+export async function applyTurboSettings(logger: Logger): Promise<void> {
   const settings: Array<{ key: string, value: unknown }> = [
     // 1.128 Updates
     { key: 'chat.agentHost.enabled', value: true },
+    { key: 'chat.byokUtilityModelDefault', value: 'copilot' },
+    { key: 'chat.utilityModel', value: 'gpt-4o' },
+    { key: 'chat.utilitySmallModel', value: 'gpt-4o-mini' },
     { key: 'chat.agents.claude.preferAgentHost', value: true },
     { key: 'sessions.list.showEmptyDefaultGroups', value: false },
     { key: 'chat.agentHost.byokModels.enabled', value: true },
@@ -109,10 +112,10 @@ export async function applyTurboSettings(): Promise<void> {
   ];
 
   const applier = new TurboSettingsApplier();
-  const updated = await applier.applyAll(settings);
+  const updated = await applier.applyAll(settings, logger);
 
   if (updated > 0) {
-    log(`Turbo mode: Updated ${updated} settings to bleeding edge Copilot features.`);
+    logger.log(`Turbo mode: Updated ${updated} settings to bleeding edge Copilot features.`);
     vscode.window.showInformationMessage(`Copilot+ Turbo: Enabled ${updated} experimental features!`);
   }
 }

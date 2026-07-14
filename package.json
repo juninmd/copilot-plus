@@ -12,14 +12,25 @@
   "engines": {
     "vscode": "^1.128.0"
   },
-  "categories": ["AI", "Other"],
-  "keywords": ["copilot", "quota", "requests", "agents", "github"],
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "keywords": [
+    "copilot",
+    "quota",
+    "requests",
+    "agents",
+    "github"
+  ],
   "icon": "resources/icon.png",
   "galleryBanner": {
     "color": "#0d1117",
     "theme": "dark"
   },
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -141,8 +152,11 @@
   "devDependencies": {
     "@types/node": "^26.1.1",
     "@types/vscode": "^1.125.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.1",
-    "typescript": "^7.0.2"
+    "eslint": "^8.57.1",
+    "typescript": "^5.9.3"
   }
 }

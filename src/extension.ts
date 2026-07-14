@@ -5,15 +5,16 @@ import { AgentExplorerProvider } from './providers/agent-explorer';
 import { ModelsExplorerProvider } from './providers/models-explorer';
 import { ToolsExplorerProvider } from './providers/tools-explorer';
 import { McpExplorerProvider } from './providers/mcp-explorer';
-import { disposeLogger, log } from './core/logger';
+import { Logger } from './core/logger';
 import { resetThresholdNotifications } from './core/model-advisor';
 import { invalidateCache } from './core/quota-service';
 import { showHistoryPanel } from './ui/history-panel';
 import { applyTurboSettings } from './core/turbo';
 
 export function activate(context: vscode.ExtensionContext): void {
+  const logger = new Logger();
   const tracker = new RequestTracker(context.globalState);
-  const statusBar = new StatusBarProvider(tracker);
+  const statusBar = new StatusBarProvider(tracker, logger);
   const agentExplorer = new AgentExplorerProvider();
   const modelsExplorer = new ModelsExplorerProvider();
   const toolsExplorer = new ToolsExplorerProvider();
@@ -41,7 +42,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('copilotPlus.turbo', () => {
-      applyTurboSettings();
+      applyTurboSettings(logger);
     }),
 
     vscode.commands.registerCommand('copilotPlus.refresh', async () => {
@@ -74,7 +75,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Log available models on startup for runtime family-string discovery
   vscode.lm.selectChatModels().then(
     (models) => tracker.logAvailableModels(models),
-    () => log('vscode.lm not available at startup')
+    () => logger.log('vscode.lm not available at startup')
   );
 
   context.subscriptions.push(
@@ -93,17 +94,16 @@ export function activate(context: vscode.ExtensionContext): void {
   statusBar.startAutoRefresh(intervalMinutes);
 
   if (config.get('autoTurbo', false)) {
-    applyTurboSettings();
+    applyTurboSettings(logger);
   }
 
   statusBar.render();
   void statusBar.refresh();
 
-  context.subscriptions.push(statusBar, agentTree, modelsTree, toolsTree, mcpsTree);
-  log('Copilot+ activated. Run "Copilot+: Diagnose" to inspect quota data.');
+  context.subscriptions.push(logger, statusBar, agentTree, modelsTree, toolsTree, mcpsTree);
+  logger.log('Copilot+ activated. Run "Copilot+: Diagnose" to inspect quota data.');
 }
 
 export function deactivate(): void {
-  disposeLogger();
 }
 
