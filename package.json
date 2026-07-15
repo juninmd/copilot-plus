@@ -147,7 +147,8 @@
     "watch": "node esbuild.js --watch",
     "package": "pnpm run check-types && node esbuild.js --production",
     "vscode:prepublish": "pnpm run package",
-    "lint": "eslint src --ext ts"
+    "lint": "eslint src --ext ts",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
@@ -157,6 +158,7 @@
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.1",
     "eslint": "^8.57.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }
