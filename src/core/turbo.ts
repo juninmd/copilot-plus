@@ -40,6 +40,11 @@ class TurboSettingsApplier {
 
 export async function applyTurboSettings(logger: Logger): Promise<void> {
   const settings: Array<{ key: string, value: unknown }> = [
+    // 1.129 Updates
+    { key: 'chat.customizations.promptMigration.enabled', value: true },
+    { key: 'sessions.layout.singlePaneDetailPanel', value: true },
+    { key: 'workbench.experimental.modernUI', value: true },
+
     // 1.128 Updates
     { key: 'chat.agentHost.enabled', value: true },
     { key: 'chat.byokUtilityModelDefault', value: 'copilot' },
