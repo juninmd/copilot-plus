@@ -4,6 +4,10 @@ import { TurboSettingsApplier } from './turbo-settings-applier';
 
 export async function applyTurboSettings(logger: Logger): Promise<void> {
   const settings: Array<{ key: string, value: unknown }> = [
+    // Security & Safety Defaults
+    { key: 'chat.tools.terminal.autoApprove', value: false },
+    { key: 'chat.tools.terminal.enableAutoApprove', value: false },
+
     // 1.129 Updates
     { key: 'chat.agentHost.enabled', value: true },
     { key: 'chat.agents.claude.preferAgentHost', value: true },
