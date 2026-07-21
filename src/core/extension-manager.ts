@@ -12,7 +12,6 @@ import { showHistoryPanel } from '../ui/history-panel';
 import { applyTurboSettings } from './turbo';
 
 export class ExtensionManager implements vscode.Disposable {
-  private readonly logger: Logger;
   private readonly tracker: RequestTracker;
   private readonly statusBar: StatusBarProvider;
 
@@ -23,8 +22,10 @@ export class ExtensionManager implements vscode.Disposable {
 
   private readonly disposables: vscode.Disposable[] = [];
 
-  constructor(private readonly context: vscode.ExtensionContext) {
-    this.logger = new Logger();
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    private readonly logger: Logger
+  ) {
     this.tracker = new RequestTracker(context.globalState);
     this.statusBar = new StatusBarProvider(this.tracker, this.logger);
 
