@@ -8,6 +8,9 @@ export async function applyTurboSettings(logger: Logger): Promise<void> {
     { key: 'chat.tools.terminal.autoApprove', value: false },
     { key: 'chat.tools.terminal.enableAutoApprove', value: false },
 
+    // 1.130 Updates (Insiders)
+    { key: 'agents.voice.handsFree', value: false },
+
     // 1.129 Updates
     { key: 'chat.agentHost.enabled', value: true },
     { key: 'chat.agents.claude.preferAgentHost', value: true },
