@@ -8,6 +8,15 @@ export async function applyTurboSettings(logger: Logger): Promise<void> {
     { key: 'chat.tools.terminal.autoApprove', value: false },
     { key: 'chat.tools.terminal.enableAutoApprove', value: false },
 
+    // 1.132 Updates
+    { key: 'breadcrumbs.showEditorType', value: true },
+
+    // 1.131 Updates
+    { key: 'dictation.enabled', value: true },
+    { key: 'dictation.experimental.llmCleanup', value: true },
+    { key: 'workbench.editor.markdownDefaultEditorInAgentsWindow', value: true },
+    { key: 'terminal.integrated.accessibleViewPreserveCursorPosition', value: true },
+
     // 1.130 Updates (Insiders)
     { key: 'agents.voice.handsFree', value: false },
 
