@@ -10,6 +10,7 @@ export async function applyTurboSettings(logger: Logger): Promise<void> {
 
     // 1.132 Updates
     { key: 'breadcrumbs.showEditorType', value: true },
+    { key: 'agents.voice.language', value: 'auto' },
 
     // 1.131 Updates
     { key: 'dictation.enabled', value: true },
