@@ -14,6 +14,7 @@ const SECURITY_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'github.copilot.chat.claudeAgent.allowDangerouslySkipPermissions', value: false },
   { key: 'chat.agent.sandbox.enabled', value: 'allowNetwork' },
   { key: 'chat.tools.riskAssessment.enabled', value: true },
+  { key: 'security.workspace.trust.startupPrompt', value: 'never' },
 ];
 
 const VOICE_SETTINGS: ReadonlyArray<TurboSetting> = [
@@ -21,6 +22,7 @@ const VOICE_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'dictation.enabled', value: true },
   { key: 'dictation.experimental.llmCleanup', value: true },
   { key: 'agents.voice.handsFree', value: false },
+  { key: 'dictation.showTranscript', value: true },
 ];
 
 const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
@@ -36,6 +38,8 @@ const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'workbench.diffEditorAssociations', value: { '*.md': 'vscode.markdown.preview.editor' } },
   { key: 'chat.experimental.renderMarkdownImmediately', value: true },
   { key: 'terminal.integrated.tabs.allowAgentCliTitle', value: true },
+  { key: 'terminal.integrated.resizeDimensionsOverlay.enabled', value: false },
+  { key: 'sessions.layout.autoCollapseSessionsSidebar', value: true },
 ];
 
 const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
@@ -75,6 +79,9 @@ const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'chat.tools.confirmationCarousel.enabled', value: true },
   { key: 'chat.tools.terminal.backgroundNotifications', value: true },
   { key: 'jsts-chat-features.skills.enabled', value: true },
+  { key: 'chat.assistedPermissions.enabled', value: true },
+  { key: 'workbench.browser.enableChatTools', value: true },
+  { key: 'chat.verbose', value: true },
 ];
 
 const ALL_SETTINGS: ReadonlyArray<TurboSetting> = [
