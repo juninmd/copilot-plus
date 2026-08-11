@@ -4,7 +4,7 @@ import { TurboSettingsApplier } from './turbo-settings-applier';
 
 export interface TurboSetting {
   readonly key: string;
-  readonly value: any;
+  readonly value: unknown;
 }
 
 const SECURITY_SETTINGS: ReadonlyArray<TurboSetting> = [
