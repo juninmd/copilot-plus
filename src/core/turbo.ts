@@ -41,6 +41,7 @@ const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'terminal.integrated.tabs.allowAgentCliTitle', value: true },
   { key: 'terminal.integrated.resizeDimensionsOverlay.enabled', value: false },
   { key: 'sessions.layout.autoCollapseSessionsSidebar', value: true },
+  { key: 'workbench.editor.associations', value: { '*.html': 'workbench.editor.browser' } },
 ];
 
 const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
@@ -96,7 +97,8 @@ const ALL_SETTINGS: ReadonlyArray<TurboSetting> = [
 
 export async function applyTurboSettings(logger: Logger): Promise<void> {
   const applier = new TurboSettingsApplier();
-  const updated = await applier.applyAll(ALL_SETTINGS as TurboSetting[], logger);
+  const config = vscode.workspace.getConfiguration();
+  const updated = await applier.applyAll(config, ALL_SETTINGS as TurboSetting[], logger);
 
   if (updated > 0) {
     logger.log(`Turbo mode: Updated ${updated} settings to bleeding edge Copilot features.`);
