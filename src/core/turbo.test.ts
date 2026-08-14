@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import * as vscode from 'vscode';
 import { applyTurboSettings } from './turbo';
 import { Logger } from './logger';
+import { TurboSettingsApplier } from './turbo-settings-applier';
 
 // Mock vscode module
 vi.mock('vscode', () => {
@@ -32,18 +33,22 @@ describe('Turbo Settings', () => {
     } as unknown as Logger;
 
     // Run applyTurboSettings
-    await applyTurboSettings(loggerMock);
+    const config = vscode.workspace.getConfiguration();
+    const showMessageMock = vi.fn();
 
-    // Verify it tries to configure workspace settings
-    expect(vscode.workspace.getConfiguration).toHaveBeenCalled();
+    await applyTurboSettings(
+      loggerMock,
+      config,
+      new TurboSettingsApplier(),
+      showMessageMock
+    );
 
     // In our mock, globalValue is always undefined, so shouldUpdate is true
     // Thus it should call update on all the keys
-    const config = vscode.workspace.getConfiguration();
     expect(config.update).toHaveBeenCalled();
 
     // Since there are updates, it should log and show a message
     expect(loggerMock.log).toHaveBeenCalledWith(expect.stringContaining('Turbo mode: Updated'));
-    expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(expect.stringContaining('Copilot+ Turbo: Enabled'));
+    expect(showMessageMock).toHaveBeenCalledWith(expect.stringContaining('Copilot+ Turbo: Enabled'));
   });
 });
