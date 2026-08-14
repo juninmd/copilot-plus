@@ -95,13 +95,16 @@ const ALL_SETTINGS: ReadonlyArray<TurboSetting> = [
   ...CHAT_SETTINGS,
 ];
 
-export async function applyTurboSettings(logger: Logger): Promise<void> {
-  const applier = new TurboSettingsApplier();
-  const config = vscode.workspace.getConfiguration();
+export async function applyTurboSettings(
+  logger: Logger,
+  config: vscode.WorkspaceConfiguration,
+  applier: TurboSettingsApplier,
+  showMessage: (msg: string) => void
+): Promise<void> {
   const updated = await applier.applyAll(config, ALL_SETTINGS as TurboSetting[], logger);
 
   if (updated > 0) {
     logger.log(`Turbo mode: Updated ${updated} settings to bleeding edge Copilot features.`);
-    vscode.window.showInformationMessage(`Copilot+ Turbo: Enabled ${updated} experimental features!`);
+    showMessage(`Copilot+ Turbo: Enabled ${updated} experimental features!`);
   }
 }

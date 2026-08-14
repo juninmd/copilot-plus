@@ -10,6 +10,7 @@ import { resetThresholdNotifications } from './model-advisor';
 import { invalidateCache } from './quota-service';
 import { showHistoryPanel } from '../ui/history-panel';
 import { applyTurboSettings } from './turbo';
+import { TurboSettingsApplier } from './turbo-settings-applier';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -73,7 +74,12 @@ export class ExtensionManager implements vscode.Disposable {
   private registerCommands(): void {
     this.disposables.push(
       vscode.commands.registerCommand('copilotPlus.turbo', () => {
-        applyTurboSettings(this.logger);
+        applyTurboSettings(
+          this.logger,
+          vscode.workspace.getConfiguration(),
+          new TurboSettingsApplier(),
+          (msg) => vscode.window.showInformationMessage(msg)
+        );
       }),
       vscode.commands.registerCommand('copilotPlus.refresh', async () => {
         invalidateCache();
@@ -124,7 +130,12 @@ export class ExtensionManager implements vscode.Disposable {
     this.statusBar.startAutoRefresh(intervalMinutes);
 
     if (config.get('autoTurbo', false)) {
-      applyTurboSettings(this.logger);
+      applyTurboSettings(
+        this.logger,
+        vscode.workspace.getConfiguration(),
+        new TurboSettingsApplier(),
+        (msg) => vscode.window.showInformationMessage(msg)
+      );
     }
   }
 
