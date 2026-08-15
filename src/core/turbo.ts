@@ -26,6 +26,7 @@ const VOICE_SETTINGS: ReadonlyArray<TurboSetting> = [
 ];
 
 const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
+  { key: 'notebook.cellToolbarLocation', value: { default: 'right', jupyter: 'left' } },
   { key: 'workbench.browser.autoReloadOnFileChange', value: true },
   { key: 'breadcrumbs.showEditorType', value: true },
   { key: 'workbench.editor.markdownDefaultEditorInAgentsWindow', value: true },
@@ -45,8 +46,8 @@ const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
 ];
 
 const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
-  { key: 'chat.agentHost.allowSignedOutWhenUsable', value: true },
   { key: 'chat.stickyScroll.enabled', value: true },
+  { key: 'chat.agentHost.allowSignedOutWhenUsable', value: true },
   { key: 'chat.agentHost.enabled', value: true },
   { key: 'chat.agents.claude.preferAgentHost', value: true },
   { key: 'chat.agentHost.byokModels.enabled', value: true },
@@ -101,7 +102,7 @@ export async function applyTurboSettings(
   applier: TurboSettingsApplier,
   showMessage: (msg: string) => void
 ): Promise<void> {
-  const updated = await applier.applyAll(config, ALL_SETTINGS as TurboSetting[], logger);
+  const updated = await applier.applyAll(config, ALL_SETTINGS, logger);
 
   if (updated > 0) {
     logger.log(`Turbo mode: Updated ${updated} settings to bleeding edge Copilot features.`);

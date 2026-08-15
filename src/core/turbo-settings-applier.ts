@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Logger } from './logger';
 
 export class TurboSettingsApplier {
-  async applyAll(config: vscode.WorkspaceConfiguration, settings: Array<{ key: string, value: unknown }>, logger: Logger): Promise<number> {
+  async applyAll(config: vscode.WorkspaceConfiguration, settings: ReadonlyArray<{ key: string, value: unknown }>, logger: Logger): Promise<number> {
     let updated = 0;
     for (const { key, value } of settings) {
       if (await this.applySettingIfChanged(config, key, value, logger)) {
