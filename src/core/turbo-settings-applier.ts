@@ -17,10 +17,12 @@ export class TurboSettingsApplier {
     let valueToSet = value;
     let shouldUpdate = false;
 
-    if (typeof value === 'object' && value !== null) {
-      const currentObj = (typeof currentValue === 'object' && currentValue !== null) ? currentValue as Record<string, unknown> : {};
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      const currentObj = (typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue)) ? currentValue as Record<string, unknown> : {};
       valueToSet = { ...currentObj, ...value as Record<string, unknown> };
       shouldUpdate = Object.entries(value as Record<string, unknown>).some(([k, v]) => currentObj[k] !== v);
+    } else if (Array.isArray(value) && Array.isArray(currentValue)) {
+      shouldUpdate = JSON.stringify(value) !== JSON.stringify(currentValue);
     } else {
       shouldUpdate = currentValue !== value;
     }
