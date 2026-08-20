@@ -42,7 +42,8 @@ const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'terminal.integrated.tabs.allowAgentCliTitle', value: true },
   { key: 'terminal.integrated.resizeDimensionsOverlay.enabled', value: false },
   { key: 'sessions.layout.autoCollapseSessionsSidebar', value: true },
-  { key: 'workbench.editor.associations', value: { '*.html': 'workbench.editor.browser' } },
+  { key: 'workbench.editorAssociations', value: { '*.html': 'workbench.editor.browser' } },
+  { key: 'workbench.editor.showTabs', value: 'single' },
 ];
 
 const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
@@ -87,6 +88,7 @@ const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'chat.assistedPermissions.enabled', value: true },
   { key: 'workbench.browser.enableChatTools', value: true },
   { key: 'chat.verbose', value: true },
+  { key: 'sessions.chatTimeline.display', value: 'ruler' },
 ];
 
 const ALL_SETTINGS: ReadonlyArray<TurboSetting> = [
