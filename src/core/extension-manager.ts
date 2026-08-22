@@ -7,7 +7,7 @@ import { ToolsExplorerProvider } from '../providers/tools-explorer';
 import { McpExplorerProvider } from '../providers/mcp-explorer';
 import { Logger } from './logger';
 import { resetThresholdNotifications } from './model-advisor';
-import { invalidateCache } from './quota-service';
+import { QuotaService } from './quota-service';
 import { showHistoryPanel } from '../ui/history-panel';
 import { applyTurboSettings } from './turbo';
 import { TurboSettingsApplier } from './turbo-settings-applier';
@@ -20,6 +20,7 @@ export class ExtensionManager implements vscode.Disposable {
   private readonly modelsExplorer: ModelsExplorerProvider;
   private readonly toolsExplorer: ToolsExplorerProvider;
   private readonly mcpExplorer: McpExplorerProvider;
+  private readonly quotaService: QuotaService;
 
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -27,8 +28,9 @@ export class ExtensionManager implements vscode.Disposable {
     private readonly context: vscode.ExtensionContext,
     private readonly logger: Logger
   ) {
+    this.quotaService = new QuotaService(logger);
     this.tracker = new RequestTracker(context.globalState);
-    this.statusBar = new StatusBarProvider(this.tracker, this.logger);
+    this.statusBar = new StatusBarProvider(this.tracker, this.logger, this.quotaService);
 
     this.agentExplorer = new AgentExplorerProvider();
     this.modelsExplorer = new ModelsExplorerProvider();
@@ -82,7 +84,7 @@ export class ExtensionManager implements vscode.Disposable {
         );
       }),
       vscode.commands.registerCommand('copilotPlus.refresh', async () => {
-        invalidateCache();
+        this.quotaService.invalidateCache();
         this.agentExplorer.refresh();
         this.modelsExplorer.refresh();
         this.toolsExplorer.refresh();

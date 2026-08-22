@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { fetchQuota, invalidateCache, type QuotaInfo, type QuotaResult } from '../core/quota-service';
+import { type QuotaInfo, type QuotaResult, type QuotaService } from '../core/quota-service';
 import { type RequestTracker } from '../core/request-tracker';
 import { Logger } from '../core/logger';
 import { checkThresholds } from '../core/model-advisor';
@@ -91,14 +91,18 @@ export class StatusBarProvider implements vscode.Disposable {
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastResult: QuotaResult = { quota: null };
 
-  constructor(private readonly tracker: RequestTracker, private readonly logger: Logger) {
+  constructor(
+    private readonly tracker: RequestTracker,
+    private readonly logger: Logger,
+    private readonly quotaService: QuotaService
+  ) {
     this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     this.item.command = 'copilotPlus.openAgentExplorer';
     this.item.show();
   }
 
   async refresh(): Promise<void> {
-    this.lastResult = await fetchQuota(this.logger);
+    this.lastResult = await this.quotaService.fetchQuota();
     const { quota } = this.lastResult;
     if (quota) {
       await checkThresholds(quota.remaining, quota.total);
@@ -124,7 +128,7 @@ export class StatusBarProvider implements vscode.Disposable {
     if (this.timer) clearInterval(this.timer);
     this.timer = setInterval(
       () => {
-        invalidateCache();
+        this.quotaService.invalidateCache();
         void this.refresh();
       },
       intervalMinutes * 60 * 1000
@@ -138,7 +142,7 @@ export class StatusBarProvider implements vscode.Disposable {
 
   showDiagnostics(): void {
     this.logger.showLogs();
-    invalidateCache();
+    this.quotaService.invalidateCache();
     void this.refresh();
   }
 }
