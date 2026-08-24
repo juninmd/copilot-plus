@@ -1,19 +1,21 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 import { applyTurboSettings } from './turbo';
 import { Logger } from './logger';
 import { TurboSettingsApplier } from './turbo-settings-applier';
 
+const mocks = vi.hoisted(() => ({
+  updateMock: vi.fn().mockResolvedValue(undefined),
+  inspectMock: vi.fn().mockReturnValue({ globalValue: undefined }),
+}));
+
 // Mock vscode module
 vi.mock('vscode', () => {
-  const updateMock = vi.fn().mockResolvedValue(undefined);
-  const inspectMock = vi.fn().mockReturnValue({ globalValue: undefined });
-
   return {
     workspace: {
       getConfiguration: vi.fn(() => ({
-        inspect: inspectMock,
-        update: updateMock,
+        inspect: mocks.inspectMock,
+        update: mocks.updateMock,
       })),
     },
     ConfigurationTarget: { Global: 1 },
@@ -23,32 +25,79 @@ vi.mock('vscode', () => {
   };
 });
 
-describe('Turbo Settings', () => {
-  it('should apply settings if they are different from current', async () => {
-    // Mock the logger
-    const loggerMock = {
-      log: vi.fn(),
-      showLogs: vi.fn(),
-      dispose: vi.fn(),
-    } as unknown as Logger;
+describe('Turbo Settings and Applier', () => {
+  const loggerMock = {
+    log: vi.fn(),
+    showLogs: vi.fn(),
+    dispose: vi.fn(),
+  } as unknown as Logger;
 
-    // Run applyTurboSettings
-    const config = vscode.workspace.getConfiguration();
-    const showMessageMock = vi.fn();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.inspectMock.mockReturnValue({ globalValue: undefined });
+  });
 
-    await applyTurboSettings(
-      loggerMock,
-      config,
-      new TurboSettingsApplier(),
-      showMessageMock
-    );
+  describe('applyTurboSettings', () => {
+    it('should log and show message if settings were updated', async () => {
+      const config = vscode.workspace.getConfiguration();
+      const showMessageMock = vi.fn();
 
-    // In our mock, globalValue is always undefined, so shouldUpdate is true
-    // Thus it should call update on all the keys
-    expect(config.update).toHaveBeenCalled();
+      await applyTurboSettings(
+        loggerMock,
+        config,
+        new TurboSettingsApplier(),
+        showMessageMock
+      );
 
-    // Since there are updates, it should log and show a message
-    expect(loggerMock.log).toHaveBeenCalledWith(expect.stringContaining('Turbo mode: Updated'));
-    expect(showMessageMock).toHaveBeenCalledWith(expect.stringContaining('Copilot+ Turbo: Enabled'));
+      expect(config.update).toHaveBeenCalled();
+      expect(loggerMock.log).toHaveBeenCalledWith(expect.stringContaining('Turbo mode: Updated'));
+      expect(showMessageMock).toHaveBeenCalledWith(expect.stringContaining('Copilot+ Turbo: Enabled'));
+    });
+  });
+
+  describe('TurboSettingsApplier.applyAll', () => {
+    it('should skip update if primitive value is the same', async () => {
+      mocks.inspectMock.mockReturnValue({ globalValue: 'same-value' });
+      const config = vscode.workspace.getConfiguration();
+
+      const applier = new TurboSettingsApplier();
+      const updatedCount = await applier.applyAll(config, [{ key: 'some.key', value: 'same-value' }], loggerMock);
+
+      expect(updatedCount).toBe(0);
+      expect(config.update).not.toHaveBeenCalled();
+    });
+
+    it('should skip update if object value is identical', async () => {
+      mocks.inspectMock.mockReturnValue({ globalValue: { prop: 'value' } });
+      const config = vscode.workspace.getConfiguration();
+
+      const applier = new TurboSettingsApplier();
+      const updatedCount = await applier.applyAll(config, [{ key: 'some.key', value: { prop: 'value' } }], loggerMock);
+
+      expect(updatedCount).toBe(0);
+      expect(config.update).not.toHaveBeenCalled();
+    });
+
+    it('should merge objects and update if new properties exist', async () => {
+      mocks.inspectMock.mockReturnValue({ globalValue: { existingProp: 'old' } });
+      const config = vscode.workspace.getConfiguration();
+
+      const applier = new TurboSettingsApplier();
+      const updatedCount = await applier.applyAll(config, [{ key: 'some.key', value: { newProp: 'new' } }], loggerMock);
+
+      expect(updatedCount).toBe(1);
+      expect(config.update).toHaveBeenCalledWith('some.key', { existingProp: 'old', newProp: 'new' }, 1);
+    });
+
+    it('should skip update if array is identical', async () => {
+      mocks.inspectMock.mockReturnValue({ globalValue: ['a', 'b'] });
+      const config = vscode.workspace.getConfiguration();
+
+      const applier = new TurboSettingsApplier();
+      const updatedCount = await applier.applyAll(config, [{ key: 'some.key', value: ['a', 'b'] }], loggerMock);
+
+      expect(updatedCount).toBe(0);
+      expect(config.update).not.toHaveBeenCalled();
+    });
   });
 });
