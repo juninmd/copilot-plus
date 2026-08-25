@@ -21,6 +21,7 @@ export class ExtensionManager implements vscode.Disposable {
   private readonly toolsExplorer: ToolsExplorerProvider;
   private readonly mcpExplorer: McpExplorerProvider;
   private readonly quotaService: QuotaService;
+  private readonly turboSettingsApplier: TurboSettingsApplier;
 
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -29,6 +30,7 @@ export class ExtensionManager implements vscode.Disposable {
     private readonly logger: Logger
   ) {
     this.quotaService = new QuotaService(logger);
+    this.turboSettingsApplier = new TurboSettingsApplier();
     this.tracker = new RequestTracker(context.globalState);
     this.statusBar = new StatusBarProvider(this.tracker, this.logger, this.quotaService);
 
@@ -79,7 +81,7 @@ export class ExtensionManager implements vscode.Disposable {
         applyTurboSettings(
           this.logger,
           vscode.workspace.getConfiguration(),
-          new TurboSettingsApplier(),
+          this.turboSettingsApplier,
           (msg) => vscode.window.showInformationMessage(msg)
         );
       }),
@@ -135,7 +137,7 @@ export class ExtensionManager implements vscode.Disposable {
       applyTurboSettings(
         this.logger,
         vscode.workspace.getConfiguration(),
-        new TurboSettingsApplier(),
+        this.turboSettingsApplier,
         (msg) => vscode.window.showInformationMessage(msg)
       );
     }

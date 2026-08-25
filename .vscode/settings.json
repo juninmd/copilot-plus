@@ -1,0 +1,8 @@
+{
+  "sessions.layout.singlePaneDetailPanel": true,
+  "workbench.editor.showTabs": "single",
+  "sessions.chatTimeline.display": "ruler",
+  "workbench.editorAssociations": {
+    "*.html": "workbench.editor.browser"
+  }
+}
