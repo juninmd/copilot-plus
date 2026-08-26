@@ -4,5 +4,10 @@
   "sessions.chatTimeline.display": "ruler",
   "workbench.editorAssociations": {
     "*.html": "workbench.editor.browser"
-  }
+  },
+  "chat.stickyScroll.enabled": true,
+  "chat.experimental.renderMarkdownImmediately": true,
+  "workbench.browser.autoReloadOnFileChange": true,
+  "chat.agentHost.allowSignedOutWhenUsable": true,
+  "notebook.cellToolbarLocation": { "default": "right", "jupyter": "left" }
 }
