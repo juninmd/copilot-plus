@@ -89,6 +89,7 @@ const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'workbench.browser.enableChatTools', value: true },
   { key: 'chat.verbose', value: true },
   { key: 'sessions.chatTimeline.display', value: 'ruler' },
+  { key: 'chat.experimental.stickyScroll.enabled', value: true },
 ];
 
 const ALL_SETTINGS: ReadonlyArray<TurboSetting> = [

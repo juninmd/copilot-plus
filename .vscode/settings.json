@@ -6,6 +6,7 @@
     "*.html": "workbench.editor.browser"
   },
   "chat.stickyScroll.enabled": true,
+  "chat.experimental.stickyScroll.enabled": true,
   "chat.experimental.renderMarkdownImmediately": true,
   "workbench.browser.autoReloadOnFileChange": true,
   "chat.agentHost.allowSignedOutWhenUsable": true,
