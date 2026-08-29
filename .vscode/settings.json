@@ -10,5 +10,6 @@
   "chat.experimental.renderMarkdownImmediately": true,
   "workbench.browser.autoReloadOnFileChange": true,
   "chat.agentHost.allowSignedOutWhenUsable": true,
+  "chat.agentSessions.showExternal": "recent",
   "notebook.cellToolbarLocation": { "default": "right", "jupyter": "left" }
 }

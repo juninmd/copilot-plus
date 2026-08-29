@@ -49,6 +49,7 @@ const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
 const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'chat.stickyScroll.enabled', value: true },
   { key: 'chat.agentHost.allowSignedOutWhenUsable', value: true },
+  { key: 'chat.agentSessions.showExternal', value: 'recent' },
   { key: 'chat.agentHost.enabled', value: true },
   { key: 'chat.agents.claude.preferAgentHost', value: true },
   { key: 'chat.agentHost.byokModels.enabled', value: true },
