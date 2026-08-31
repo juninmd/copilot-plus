@@ -160,9 +160,15 @@ export class QuotaService {
     if (parts.length < 2) throw new Error('Invalid JWT structure');
     const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
     const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
-    // globalThis.Buffer is always available in Node.js runtime
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return JSON.parse((globalThis as any).Buffer.from(padded, 'base64').toString('utf-8')) as JwtPayload;
+    return JSON.parse(Buffer.from(padded, 'base64').toString('utf-8')) as JwtPayload;
+  }
+
+  private buildQuotaInfo(limit: number | undefined, remaining: number | undefined, used: number | undefined, configTotal: number, sourceName: string): QuotaInfo {
+    const total = limit ?? configTotal;
+    const rem = remaining ?? total;
+    const us = used ?? (total - rem);
+    this.logger.log(`Quota via ${sourceName}: ${rem}/${total}`);
+    return { total, used: us, remaining: rem, percentUsed: Math.round((us / total) * 100), source: 'api' };
   }
 
   private extractQuota(payload: JwtPayload, configTotal: number): QuotaInfo | null {
@@ -171,21 +177,13 @@ export class QuotaService {
     // 1. Free plan: limited_user_quotas.month (chat_requests / used / remaining)
     const month = payload.limited_user_quotas?.month;
     if (month && (month.remaining !== undefined || month.chat_requests !== undefined)) {
-      const total = month.chat_requests ?? configTotal;
-      const remaining = month.remaining ?? total;
-      const used = month.used ?? (total - remaining);
-      this.logger.log(`Quota via limited_user_quotas.month: ${remaining}/${total}`);
-      return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
+      return this.buildQuotaInfo(month.chat_requests, month.remaining, month.used, configTotal, 'limited_user_quotas.month');
     }
 
     // 2. Paid plan (monthly_subscriber_quota): chat_quota
     const cq = payload.chat_quota;
     if (cq?.remaining !== undefined) {
-      const total = cq.limit ?? configTotal;
-      const remaining = cq.remaining;
-      const used = cq.used ?? (total - remaining);
-      this.logger.log(`Quota via chat_quota: ${remaining}/${total}`);
-      return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
+      return this.buildQuotaInfo(cq.limit, cq.remaining, cq.used, configTotal, 'chat_quota');
     }
 
     // 3. Paid plan: quota_snapshots (keyed object, pick 'chat' or first entry)
@@ -193,11 +191,7 @@ export class QuotaService {
     if (snaps) {
       const entry = snaps['chat'] ?? snaps[Object.keys(snaps)[0]];
       if (entry?.remaining !== undefined) {
-        const total = entry.limit ?? configTotal;
-        const remaining = entry.remaining;
-        const used = entry.used ?? (total - remaining);
-        this.logger.log(`Quota via quota_snapshots: ${remaining}/${total}`);
-        return { total, used, remaining, percentUsed: Math.round((used / total) * 100), source: 'api' };
+        return this.buildQuotaInfo(entry.limit, entry.remaining, entry.used, configTotal, 'quota_snapshots');
       }
     }
 
