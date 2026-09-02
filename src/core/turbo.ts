@@ -44,6 +44,8 @@ const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'sessions.layout.autoCollapseSessionsSidebar', value: true },
   { key: 'workbench.editorAssociations', value: { '*.html': 'workbench.editor.browser' } },
   { key: 'workbench.editor.showTabs', value: 'single' },
+  { key: 'javascript.inlayHints.enumMemberValues.enabled', value: true },
+  { key: 'typescript.inlayHints.enumMemberValues.enabled', value: true },
 ];
 
 const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
