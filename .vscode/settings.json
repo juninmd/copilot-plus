@@ -11,7 +11,17 @@
   "workbench.browser.autoReloadOnFileChange": true,
   "chat.agentHost.allowSignedOutWhenUsable": true,
   "chat.agentSessions.showExternal": "recent",
-  "notebook.cellToolbarLocation": { "default": "right", "jupyter": "left" },
+  "notebook.cellToolbarLocation": {
+    "default": "right",
+    "jupyter": "left"
+  },
   "javascript.inlayHints.enumMemberValues.enabled": true,
-  "typescript.inlayHints.enumMemberValues.enabled": true
+  "typescript.inlayHints.enumMemberValues.enabled": true,
+  "chat.agentHost.copilotAgent.multiRootEnabled": true,
+  "chat.agentHost.claudeAgent.multiRootEnabled": true,
+  "chat.notifyWindowOnConfirmation": true,
+  "chat.notifyWindowOnResponseReceived": true,
+  "chat.agentMerge.enabled": true,
+  "workbench.experimental.modernUI": true,
+  "window.density.layout": "compact"
 }

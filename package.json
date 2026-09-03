@@ -10,7 +10,7 @@
     "url": "https://github.com/juninmd/copilot-plus"
   },
   "engines": {
-    "vscode": "^1.135.0"
+    "vscode": "^1.136.0"
   },
   "categories": [
     "AI",
@@ -152,7 +152,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
-    "@types/vscode": "^1.134.0",
+    "@types/vscode": "^1.136.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vscode/vsce": "^3.9.2",
