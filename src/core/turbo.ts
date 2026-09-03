@@ -26,6 +26,8 @@ const VOICE_SETTINGS: ReadonlyArray<TurboSetting> = [
 ];
 
 const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
+  { key: 'workbench.experimental.modernUI', value: true },
+  { key: 'window.density.layout', value: 'compact' },
   { key: 'notebook.cellToolbarLocation', value: { default: 'right', jupyter: 'left' } },
   { key: 'workbench.browser.autoReloadOnFileChange', value: true },
   { key: 'breadcrumbs.showEditorType', value: true },
@@ -49,6 +51,11 @@ const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
 ];
 
 const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
+  { key: 'chat.agentHost.copilotAgent.multiRootEnabled', value: true },
+  { key: 'chat.agentHost.claudeAgent.multiRootEnabled', value: true },
+  { key: 'chat.notifyWindowOnConfirmation', value: true },
+  { key: 'chat.notifyWindowOnResponseReceived', value: true },
+  { key: 'chat.agentMerge.enabled', value: true },
   { key: 'chat.stickyScroll.enabled', value: true },
   { key: 'chat.agentHost.allowSignedOutWhenUsable', value: true },
   { key: 'chat.agentSessions.showExternal', value: 'recent' },
