@@ -23,5 +23,8 @@
   "chat.notifyWindowOnResponseReceived": true,
   "chat.agentMerge.enabled": true,
   "workbench.experimental.modernUI": true,
-  "window.density.layout": "compact"
+  "window.density.layout": "compact",
+  "chat.agentSessions.preferredDarkBackgroundImage": "codicons",
+  "chat.agentSessions.preferredLightBackgroundImage": "codicons",
+  "chat.agentSessions.backgroundImageLayout": "repeat"
 }

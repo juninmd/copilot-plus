@@ -51,6 +51,9 @@ const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
 ];
 
 const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
+  { key: 'chat.agentSessions.preferredDarkBackgroundImage', value: 'codicons' },
+  { key: 'chat.agentSessions.preferredLightBackgroundImage', value: 'codicons' },
+  { key: 'chat.agentSessions.backgroundImageLayout', value: 'repeat' },
   { key: 'chat.agentHost.copilotAgent.multiRootEnabled', value: true },
   { key: 'chat.agentHost.claudeAgent.multiRootEnabled', value: true },
   { key: 'chat.notifyWindowOnConfirmation', value: true },
