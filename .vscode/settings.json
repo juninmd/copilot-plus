@@ -26,5 +26,7 @@
   "window.density.layout": "compact",
   "chat.agentSessions.preferredDarkBackgroundImage": "codicons",
   "chat.agentSessions.preferredLightBackgroundImage": "codicons",
-  "chat.agentSessions.backgroundImageLayout": "repeat"
+  "chat.agentSessions.backgroundImageLayout": "repeat",
+  "chat.pasteGitHubLinksAsReferences": true,
+  "chat.agentHost.shellTool.initScript.enabled": true
 }
