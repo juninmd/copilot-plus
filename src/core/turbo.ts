@@ -103,6 +103,8 @@ const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'chat.verbose', value: true },
   { key: 'sessions.chatTimeline.display', value: 'ruler' },
   { key: 'chat.experimental.stickyScroll.enabled', value: true },
+  { key: 'chat.pasteGitHubLinksAsReferences', value: true },
+  { key: 'chat.agentHost.shellTool.initScript.enabled', value: true },
 ];
 
 const ALL_SETTINGS: ReadonlyArray<TurboSetting> = [
