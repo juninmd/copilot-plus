@@ -28,5 +28,19 @@
   "chat.agentSessions.preferredLightBackgroundImage": "codicons",
   "chat.agentSessions.backgroundImageLayout": "repeat",
   "chat.pasteGitHubLinksAsReferences": true,
-  "chat.agentHost.shellTool.initScript.enabled": true
+  "chat.agentHost.shellTool.initScript.enabled": true,
+  "editor.stickyScroll.enabled": true,
+  "workbench.tree.enableStickyScroll": true,
+  "terminal.integrated.stickyScroll.enabled": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "editor.formatOnSave": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "explorer.fileNesting.enabled": true,
+  "editor.linkedEditing": true,
+  "window.autoDetectColorScheme": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  }
 }
