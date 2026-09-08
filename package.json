@@ -161,11 +161,5 @@
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@vscode/vsce-sign",
-      "esbuild",
-      "keytar"
-    ]
-  }
+  "packageManager": "pnpm@9.6.0"
 }
