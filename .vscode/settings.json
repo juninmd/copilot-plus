@@ -42,5 +42,8 @@
   "window.autoDetectColorScheme": true,
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit"
-  }
+  },
+  "explorer.autoOpenDroppedFile": false,
+  "scm.showHistoryGraph": true,
+  "accessibility.verbosity.debug": true
 }
