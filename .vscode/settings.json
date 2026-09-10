@@ -45,5 +45,9 @@
   },
   "explorer.autoOpenDroppedFile": false,
   "scm.showHistoryGraph": true,
-  "accessibility.verbosity.debug": true
+  "accessibility.verbosity.debug": true,
+  "chat.automations.enabled": true,
+  "extensions.experimental.enableAgentsWindowCapability": true,
+  "agents.voice.enabled": true,
+  "chat.experimental.richLinks.enabled": true
 }
