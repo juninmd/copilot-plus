@@ -23,10 +23,13 @@ const VOICE_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'dictation.experimental.llmCleanup', value: true },
   { key: 'agents.voice.handsFree', value: false },
   { key: 'dictation.showTranscript', value: true },
+  { key: 'agents.voice.enabled', value: true },
+  { key: 'agents.voice.showTranscript', value: true },
 ];
 
 const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'workbench.experimental.modernUI', value: true },
+  { key: 'markdown.experimental.richLinks.enabled', value: true },
   { key: 'window.density.layout', value: 'compact' },
   { key: 'notebook.cellToolbarLocation', value: { default: 'right', jupyter: 'left' } },
   { key: 'workbench.browser.autoReloadOnFileChange', value: true },
@@ -105,6 +108,8 @@ const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'chat.experimental.stickyScroll.enabled', value: true },
   { key: 'chat.pasteGitHubLinksAsReferences', value: true },
   { key: 'chat.agentHost.shellTool.initScript.enabled', value: true },
+  { key: 'chat.automations.enabled', value: true },
+  { key: 'chat.experimental.richLinks.enabled', value: true },
 ];
 
 const ALL_SETTINGS: ReadonlyArray<TurboSetting> = [
