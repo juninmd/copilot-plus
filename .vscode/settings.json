@@ -49,5 +49,6 @@
   "chat.automations.enabled": true,
   "extensions.experimental.enableAgentsWindowCapability": true,
   "agents.voice.enabled": true,
-  "chat.experimental.richLinks.enabled": true
+  "chat.experimental.richLinks.enabled": true,
+  "markdown.experimental.richLinks.enabled": true
 }
