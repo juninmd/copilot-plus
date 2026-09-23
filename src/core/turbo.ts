@@ -26,6 +26,9 @@ const VOICE_SETTINGS: ReadonlyArray<TurboSetting> = [
 ];
 
 const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
+  { key: 'editor.experimental.preferTreeSitter', value: true },
+  { key: 'terminal.integrated.suggest.enabled', value: true },
+  { key: 'terminal.integrated.hideOnLastClosed', value: true },
   { key: 'workbench.experimental.modernUI', value: true },
   { key: 'window.density.layout', value: 'compact' },
   { key: 'notebook.cellToolbarLocation', value: { default: 'right', jupyter: 'left' } },
