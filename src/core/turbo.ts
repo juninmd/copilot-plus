@@ -105,6 +105,11 @@ const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
   { key: 'chat.experimental.stickyScroll.enabled', value: true },
   { key: 'chat.pasteGitHubLinksAsReferences', value: true },
   { key: 'chat.agentHost.shellTool.initScript.enabled', value: true },
+  { key: 'chat.agentHost.devContainer.enabled', value: true },
+  { key: 'chat.agentHost.codexAgent.enabled', value: true },
+  { key: 'chat.editor.codex.preferAgentHost', value: true },
+  { key: 'chat.automations.enabled', value: true },
+  { key: 'sessions.showChatTabs', value: 'single' },
 ];
 
 const ALL_SETTINGS: ReadonlyArray<TurboSetting> = [
