@@ -18,6 +18,7 @@ const SECURITY_SETTINGS: ReadonlyArray<TurboSetting> = [
 ];
 
 const VOICE_SETTINGS: ReadonlyArray<TurboSetting> = [
+  { key: 'agents.voice.enabled', value: true },
   { key: 'agents.voice.language', value: 'auto' },
   { key: 'dictation.enabled', value: true },
   { key: 'dictation.experimental.llmCleanup', value: true },
@@ -51,6 +52,9 @@ const EDITOR_SETTINGS: ReadonlyArray<TurboSetting> = [
 ];
 
 const CHAT_SETTINGS: ReadonlyArray<TurboSetting> = [
+  { key: 'chat.automations.enabled', value: true },
+  { key: 'extensions.experimental.enableAgentsWindowCapability', value: true },
+  { key: 'chat.experimental.richLinks.enabled', value: true },
   { key: 'chat.agentSessions.preferredDarkBackgroundImage', value: 'codicons' },
   { key: 'chat.agentSessions.preferredLightBackgroundImage', value: 'codicons' },
   { key: 'chat.agentSessions.backgroundImageLayout', value: 'repeat' },
