@@ -50,8 +50,6 @@
   "extensions.experimental.enableAgentsWindowCapability": true,
   "agents.voice.enabled": true,
   "chat.experimental.richLinks.enabled": true,
-  "chat.agentHost.devContainer.enabled": true,
-  "sessions.showChatTabs": "single",
-  "chat.agentHost.codexAgent.enabled": true,
-  "chat.editor.codex.preferAgentHost": true
+  "agents.voice.showTranscript": true,
+  "markdown.experimental.richLinks.enabled": true
 }
