@@ -51,5 +51,6 @@
   "agents.voice.enabled": true,
   "chat.experimental.richLinks.enabled": true,
   "agents.voice.showTranscript": true,
+  "agents.voice.voice": "default",
   "markdown.experimental.richLinks.enabled": true
 }
