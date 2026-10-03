@@ -63,6 +63,24 @@
         "title": "Show Usage History",
         "category": "Copilot+",
         "icon": "$(history)"
+      },
+      {
+        "command": "copilotPlus.generateInstructions",
+        "title": "Generate Workspace Copilot Instructions",
+        "category": "Copilot+",
+        "icon": "$(file-text)"
+      },
+      {
+        "command": "copilotPlus.createPromptTemplate",
+        "title": "Create Custom Prompt Template",
+        "category": "Copilot+",
+        "icon": "$(add)"
+      },
+      {
+        "command": "copilotPlus.recommendModel",
+        "title": "Recommend Optimal Model",
+        "category": "Copilot+",
+        "icon": "$(lightbulb)"
       }
     ],
     "viewsContainers": {
@@ -91,6 +109,10 @@
         {
           "id": "copilotPlus.mcps",
           "name": "MCP Servers"
+        },
+        {
+          "id": "copilotPlus.prompts",
+          "name": "Instructions & Prompts"
         }
       ]
     },
@@ -98,12 +120,22 @@
       "view/title": [
         {
           "command": "copilotPlus.turbo",
-          "when": "view == copilotPlus.agents || view == copilotPlus.models || view == copilotPlus.tools || view == copilotPlus.mcps",
+          "when": "view == copilotPlus.agents || view == copilotPlus.models || view == copilotPlus.tools || view == copilotPlus.mcps || view == copilotPlus.prompts",
           "group": "navigation"
         },
         {
           "command": "copilotPlus.refresh",
-          "when": "view == copilotPlus.agents || view == copilotPlus.models || view == copilotPlus.tools || view == copilotPlus.mcps",
+          "when": "view == copilotPlus.agents || view == copilotPlus.models || view == copilotPlus.tools || view == copilotPlus.mcps || view == copilotPlus.prompts",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.recommendModel",
+          "when": "view == copilotPlus.models",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.generateInstructions",
+          "when": "view == copilotPlus.prompts",
           "group": "navigation"
         },
         {
@@ -113,7 +145,7 @@
         },
         {
           "command": "copilotPlus.showHistory",
-          "when": "view == copilotPlus.agents || view == copilotPlus.models || view == copilotPlus.tools || view == copilotPlus.mcps",
+          "when": "view == copilotPlus.agents || view == copilotPlus.models || view == copilotPlus.tools || view == copilotPlus.mcps || view == copilotPlus.prompts",
           "group": "navigation"
         }
       ]
