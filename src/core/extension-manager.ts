@@ -5,8 +5,10 @@ import { AgentExplorerProvider } from '../providers/agent-explorer';
 import { ModelsExplorerProvider } from '../providers/models-explorer';
 import { ToolsExplorerProvider } from '../providers/tools-explorer';
 import { McpExplorerProvider } from '../providers/mcp-explorer';
+import { PromptsExplorerProvider } from '../providers/prompts-explorer';
+import { PromptManager } from './prompt-manager';
 import { Logger } from './logger';
-import { resetThresholdNotifications } from './model-advisor';
+import { resetThresholdNotifications, recommendModelQuickPick } from './model-advisor';
 import { QuotaService } from './quota-service';
 import { showHistoryPanel } from '../ui/history-panel';
 import { applyTurboSettings } from './turbo';
@@ -20,6 +22,8 @@ export class ExtensionManager implements vscode.Disposable {
   private readonly modelsExplorer: ModelsExplorerProvider;
   private readonly toolsExplorer: ToolsExplorerProvider;
   private readonly mcpExplorer: McpExplorerProvider;
+  private readonly promptsExplorer: PromptsExplorerProvider;
+  private readonly promptManager: PromptManager;
   private readonly quotaService: QuotaService;
   private readonly turboSettingsApplier: TurboSettingsApplier;
 
@@ -31,6 +35,7 @@ export class ExtensionManager implements vscode.Disposable {
   ) {
     this.quotaService = new QuotaService(logger);
     this.turboSettingsApplier = new TurboSettingsApplier();
+    this.promptManager = new PromptManager();
     this.tracker = new RequestTracker(context.globalState);
     this.statusBar = new StatusBarProvider(this.tracker, this.logger, this.quotaService);
 
@@ -38,6 +43,7 @@ export class ExtensionManager implements vscode.Disposable {
     this.modelsExplorer = new ModelsExplorerProvider();
     this.toolsExplorer = new ToolsExplorerProvider();
     this.mcpExplorer = new McpExplorerProvider();
+    this.promptsExplorer = new PromptsExplorerProvider(this.promptManager);
 
     this.disposables.push(this.logger, this.statusBar);
   }
@@ -71,6 +77,10 @@ export class ExtensionManager implements vscode.Disposable {
       vscode.window.createTreeView('copilotPlus.mcps', {
         treeDataProvider: this.mcpExplorer,
         showCollapseAll: false
+      }),
+      vscode.window.createTreeView('copilotPlus.prompts', {
+        treeDataProvider: this.promptsExplorer,
+        showCollapseAll: false
       })
     );
   }
@@ -91,6 +101,7 @@ export class ExtensionManager implements vscode.Disposable {
         this.modelsExplorer.refresh();
         this.toolsExplorer.refresh();
         this.mcpExplorer.refresh();
+        this.promptsExplorer.refresh();
         await this.statusBar.refresh();
       }),
       vscode.commands.registerCommand('copilotPlus.openAgentExplorer', async () => {
@@ -98,6 +109,7 @@ export class ExtensionManager implements vscode.Disposable {
         this.modelsExplorer.refresh();
         this.toolsExplorer.refresh();
         this.mcpExplorer.refresh();
+        this.promptsExplorer.refresh();
         await vscode.commands.executeCommand('copilotPlus.agents.focus');
         await this.statusBar.refresh();
       }),
@@ -106,6 +118,38 @@ export class ExtensionManager implements vscode.Disposable {
       }),
       vscode.commands.registerCommand('copilotPlus.showHistory', () => {
         showHistoryPanel(this.context, this.tracker);
+      }),
+      vscode.commands.registerCommand('copilotPlus.recommendModel', async () => {
+        await recommendModelQuickPick();
+      }),
+      vscode.commands.registerCommand('copilotPlus.generateInstructions', async () => {
+        try {
+          const uri = await this.promptManager.generateDefaultInstructions();
+          if (uri) {
+            this.promptsExplorer.refresh();
+            const doc = await vscode.workspace.openTextDocument(uri);
+            await vscode.window.showTextDocument(doc);
+            vscode.window.showInformationMessage('Generated .github/copilot-instructions.md successfully!');
+          }
+        } catch (err) {
+          vscode.window.showErrorMessage(`Failed to generate copilot instructions: ${String(err)}`);
+        }
+      }),
+      vscode.commands.registerCommand('copilotPlus.createPromptTemplate', async () => {
+        const name = await vscode.window.showInputBox({
+          prompt: 'Enter prompt template name (e.g. code-review, security-audit)',
+          value: 'code-review'
+        });
+        if (!name) return;
+        try {
+          const uri = await this.promptManager.createSamplePromptTemplate(name);
+          this.promptsExplorer.refresh();
+          const doc = await vscode.workspace.openTextDocument(uri);
+          await vscode.window.showTextDocument(doc);
+          vscode.window.showInformationMessage(`Created ${vscode.workspace.asRelativePath(uri)} successfully!`);
+        } catch (err) {
+          vscode.window.showErrorMessage(`Failed to create prompt template: ${String(err)}`);
+        }
       })
     );
   }

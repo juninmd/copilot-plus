@@ -56,3 +56,57 @@ export async function checkThresholds(remaining: number, total: number): Promise
     }
   }
 }
+
+export interface ModelQuickPickItem extends vscode.QuickPickItem {
+  modelName: string;
+  multiplier: number;
+}
+
+export async function recommendModelQuickPick(): Promise<void> {
+  let models: vscode.LanguageModelChat[] = [];
+  try {
+    models = await vscode.lm.selectChatModels();
+  } catch {
+    vscode.window.showWarningMessage('Copilot Language Models API is not available.');
+    return;
+  }
+
+  if (models.length === 0) {
+    vscode.window.showInformationMessage('No Copilot Chat models available in VS Code session.');
+    return;
+  }
+
+  const items: ModelQuickPickItem[] = models.map((m) => {
+    const multiplier = detectMultiplier(m.name);
+    let recommendation = '';
+    if (multiplier === 0) {
+      recommendation = '$(star-full) Recommended for Everyday Coding & Refactoring (FREE - 0x)';
+    } else if (multiplier < 1) {
+      recommendation = '$(lightbulb) Best for Quick Edits & Fast Search (Lite - ' + multiplier + 'x)';
+    } else if (multiplier === 1) {
+      recommendation = '$(check) Standard Reasoning & Complex Coding (1x)';
+    } else {
+      recommendation = '$(flame) Heavy Architectural Design & Logic Proofs (Premium - ' + multiplier + 'x)';
+    }
+
+    return {
+      label: `$(symbol-misc) ${m.name}`,
+      description: `${multiplier}× cost multiplier`,
+      detail: `${recommendation} | Context: ${Math.round(m.maxInputTokens / 1000)}K tokens | Family: ${m.family}`,
+      modelName: m.name,
+      multiplier
+    };
+  }).sort((a, b) => a.multiplier - b.multiplier);
+
+  const selected = await vscode.window.showQuickPick(items, {
+    placeHolder: 'Select a model recommendation for your current task cost-efficiency:',
+    matchOnDescription: true,
+    matchOnDetail: true
+  });
+
+  if (selected) {
+    vscode.window.showInformationMessage(
+      `Selected ${selected.modelName} (${selected.multiplier}× request cost). Use this model in Copilot Chat for optimal quota consumption.`
+    );
+  }
+}
