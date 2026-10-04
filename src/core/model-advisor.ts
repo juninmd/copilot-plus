@@ -110,3 +110,14 @@ export async function recommendModelQuickPick(): Promise<void> {
     );
   }
 }
+
+export function recommendModel(taskDescription: string): { model: string; multiplier: number; reason: string } {
+  const lower = taskDescription.toLowerCase();
+  if (lower.includes('architecture') || lower.includes('complex') || lower.includes('proof') || lower.includes('hard')) {
+    return { model: 'Claude 3.7 Sonnet / Claude Opus', multiplier: 1, reason: 'High reasoning capacity required for complex architecture.' };
+  }
+  if (lower.includes('quick') || lower.includes('edit') || lower.includes('small') || lower.includes('fast')) {
+    return { model: 'GPT-4o mini / Claude Haiku', multiplier: 0.33, reason: 'Fast and cheap model ideal for quick edits and lightweight tasks.' };
+  }
+  return { model: 'GPT-4o / Claude Sonnet', multiplier: 0, reason: 'Included model with zero premium cost for everyday development.' };
+}
