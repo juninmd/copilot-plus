@@ -171,7 +171,55 @@
           "description": "Automatically enable experimental Copilot features on startup"
         }
       }
-    }
+    },
+    "languageModelTools": [
+      {
+        "id": "copilotPlus_getQuota",
+        "name": "get_copilot_quota",
+        "displayName": "Copilot Quota Info",
+        "modelDescription": "Gets live remaining GitHub Copilot request quota and session usage statistics.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "id": "copilotPlus_recommendModel",
+        "name": "recommend_copilot_model",
+        "displayName": "Recommend Copilot Model",
+        "modelDescription": "Recommends the most cost-effective and suitable LLM model for a specific development task.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "taskDescription": {
+              "type": "string",
+              "description": "Description of the task to perform (e.g. fast refactoring, complex architecture, test generation)."
+            }
+          }
+        }
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "copilotPlus.participant",
+        "name": "copilotPlus",
+        "description": "Copilot+ Assistant for quota stats, model selection, instructions, and turbo settings",
+        "commands": [
+          {
+            "name": "quota",
+            "description": "Show current Copilot request quota and session usage"
+          },
+          {
+            "name": "recommend",
+            "description": "Recommend optimal LLM model for a task"
+          },
+          {
+            "name": "turbo",
+            "description": "Enable experimental Copilot features"
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "compile": "pnpm run check-types && node esbuild.js",

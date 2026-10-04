@@ -13,6 +13,8 @@ import { QuotaService } from './quota-service';
 import { showHistoryPanel } from '../ui/history-panel';
 import { applyTurboSettings } from './turbo';
 import { TurboSettingsApplier } from './turbo-settings-applier';
+import { registerCopilotTools } from './copilot-tools';
+import { registerCopilotParticipant } from './copilot-participant';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -52,12 +54,20 @@ export class ExtensionManager implements vscode.Disposable {
     this.registerViews();
     this.registerCommands();
     this.registerModelListeners();
+    this.registerCopilotIntegrations();
     this.initializeSettings();
 
     this.statusBar.render();
     void this.statusBar.refresh();
 
     this.logger.log('Copilot+ activated. Run "Copilot+: Diagnose" to inspect quota data.');
+  }
+
+  private registerCopilotIntegrations(): void {
+    this.disposables.push(
+      ...registerCopilotTools(this.quotaService, this.tracker),
+      ...registerCopilotParticipant(this.quotaService, this.tracker, this.logger)
+    );
   }
 
   private registerViews(): void {
