@@ -67,6 +67,78 @@ export class PromptManager {
     return templates.sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  public async detectWorkspaceTechnologies(): Promise<string[]> {
+    const technologies: string[] = [];
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      return technologies;
+    }
+
+    const rootUri = workspaceFolders[0].uri;
+
+    const checkFileExists = async (fileName: string): Promise<boolean> => {
+      try {
+        await vscode.workspace.fs.stat(vscode.Uri.joinPath(rootUri, fileName));
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    if (await checkFileExists('package.json')) {
+      technologies.push('Node.js');
+      try {
+        const pkgUri = vscode.Uri.joinPath(rootUri, 'package.json');
+        const content = await vscode.workspace.fs.readFile(pkgUri);
+        const pkgJson = JSON.parse(new TextDecoder().decode(content));
+        const allDeps = { ...pkgJson.dependencies, ...pkgJson.devDependencies };
+
+        if (allDeps.typescript || await checkFileExists('tsconfig.json')) technologies.push('TypeScript');
+        if (allDeps.react || allDeps['react-dom']) technologies.push('React');
+        if (allDeps['@nestjs/core']) technologies.push('NestJS');
+        if (allDeps.vue) technologies.push('Vue');
+        if (allDeps['@angular/core']) technologies.push('Angular');
+        if (allDeps.vitest) technologies.push('Vitest');
+        if (allDeps.jest) technologies.push('Jest');
+      } catch {
+        // Fallback if parsing fails
+      }
+    }
+
+    if (await checkFileExists('requirements.txt') || await checkFileExists('pyproject.toml')) {
+      technologies.push('Python');
+    }
+    if (await checkFileExists('pubspec.yaml')) {
+      technologies.push('Flutter');
+    }
+    if (await checkFileExists('Cargo.toml')) {
+      technologies.push('Rust');
+    }
+    if (await checkFileExists('go.mod')) {
+      technologies.push('Go');
+    }
+
+    return Array.from(new Set(technologies));
+  }
+
+  public async interpolateTemplate(rawTemplate: string): Promise<string> {
+    const editor = vscode.window.activeTextEditor;
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+
+    const selectedText = editor ? editor.document.getText(editor.selection) : '';
+    const filePath = editor ? vscode.workspace.asRelativePath(editor.document.uri) : '';
+    const fileName = editor ? path.basename(editor.document.uri.fsPath) : '';
+    const languageId = editor ? editor.document.languageId : '';
+    const workspaceName = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].name : '';
+
+    return rawTemplate
+      .replace(/\$\{selectedText\}/g, selectedText)
+      .replace(/\$\{filePath\}/g, filePath)
+      .replace(/\$\{fileName\}/g, fileName)
+      .replace(/\$\{languageId\}/g, languageId)
+      .replace(/\$\{workspaceName\}/g, workspaceName);
+  }
+
   public async generateDefaultInstructions(): Promise<vscode.Uri | null> {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -76,21 +148,25 @@ export class PromptManager {
     const rootUri = workspaceFolders[0].uri;
     const instructionsUri = vscode.Uri.joinPath(rootUri, '.github', 'copilot-instructions.md');
 
+    const techStack = await this.detectWorkspaceTechnologies();
+    const techStackList = techStack.length > 0
+      ? techStack.map((t) => `- **${t}**`).join('\n')
+      : '- General Software Engineering';
+
     const defaultContent = `# GitHub Copilot Workspace Instructions
 
-## Project Context
-This project follows strict software engineering standards to maintain high quality, reliability, and maintainability.
+## Project Tech Stack
+${techStackList}
 
 ## Engineering Standards
 - **Code Quality:** Strictly adhere to Clean Code, SOLID, DRY, KISS, and YAGNI principles.
-- **TypeScript & Node.js:** Prefer strong typing, explicit return types, and async/await over raw promises.
-- **Testing:** Write unit and integration tests using Vitest / Jest. Ensure high test coverage for core domain logic.
-- **Refactoring:** Keep functions small, single-purpose, and free of side effects where possible.
+- **Architecture:** Keep modules decoupled, cohesive, and follow clean architectural boundaries.
+- **Testing:** Write high-coverage unit and integration tests.
+- **Refactoring:** Keep functions small, single-purpose, and free of side effects.
 
-## Interaction & Code Generation Rules
-- Deliver clear, concise code solutions without unnecessary preamble or boilerplate explanations.
-- Prioritize modularity and maintainability.
-- Ensure all introduced imports and dependencies are correct and up to date.
+## Interaction Rules
+- Deliver direct, production-ready code with zero fluff or conversational filler.
+- Respect existing code formatting and project architectural decisions.
 `;
 
     const encoder = new TextEncoder();
