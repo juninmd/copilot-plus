@@ -62,12 +62,20 @@ export class PromptsExplorerProvider implements vscode.TreeDataProvider<PromptNo
     item.iconPath = new vscode.ThemeIcon(
       prompt.type === 'instruction' ? 'verified' : 'symbol-keyword'
     );
-    item.command = {
-      command: 'vscode.open',
-      title: 'Open File',
-      arguments: [prompt.uri]
-    };
-    item.contextValue = 'prompt-item';
+    if (prompt.type === 'prompt-template') {
+      item.command = {
+        command: 'copilotPlus.runPromptTemplate',
+        title: 'Run Prompt Template',
+        arguments: [prompt.uri]
+      };
+    } else {
+      item.command = {
+        command: 'vscode.open',
+        title: 'Open File',
+        arguments: [prompt.uri]
+      };
+    }
+    item.contextValue = prompt.type === 'prompt-template' ? 'prompt-template-item' : 'prompt-item';
     return item;
   }
 

@@ -77,6 +77,12 @@
         "icon": "$(add)"
       },
       {
+        "command": "copilotPlus.runPromptTemplate",
+        "title": "Run Prompt Template with Context",
+        "category": "Copilot+",
+        "icon": "$(play)"
+      },
+      {
         "command": "copilotPlus.recommendModel",
         "title": "Recommend Optimal Model",
         "category": "Copilot+",

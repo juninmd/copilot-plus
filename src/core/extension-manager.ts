@@ -160,6 +160,32 @@ export class ExtensionManager implements vscode.Disposable {
         } catch (err) {
           vscode.window.showErrorMessage(`Failed to create prompt template: ${String(err)}`);
         }
+      }),
+      vscode.commands.registerCommand('copilotPlus.runPromptTemplate', async (uri?: vscode.Uri) => {
+        let templateUri = uri;
+        if (!templateUri) {
+          const templates = await this.promptManager.getWorkspacePromptTemplates();
+          if (templates.length === 0) {
+            vscode.window.showInformationMessage('No prompt templates found. Create one first!');
+            return;
+          }
+          const picked = await vscode.window.showQuickPick(
+            templates.map((t) => ({ label: t.name, description: t.relativePath, uri: t.uri })),
+            { placeHolder: 'Select a prompt template to run with current context:' }
+          );
+          if (!picked) return;
+          templateUri = picked.uri;
+        }
+
+        try {
+          const rawDoc = await vscode.workspace.openTextDocument(templateUri);
+          const interpolated = await this.promptManager.interpolateTemplate(rawDoc.getText());
+          await vscode.env.clipboard.writeText(interpolated);
+          vscode.window.showInformationMessage('Interpolated prompt copied to clipboard! Paste it into Copilot Chat.');
+          await vscode.commands.executeCommand('workbench.action.chat.open');
+        } catch (err) {
+          vscode.window.showErrorMessage(`Failed to run prompt template: ${String(err)}`);
+        }
       })
     );
   }

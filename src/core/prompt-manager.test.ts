@@ -5,13 +5,18 @@ import { PromptManager } from './prompt-manager';
 vi.mock('vscode', () => {
   const statMock = vi.fn();
   const writeFileMock = vi.fn().mockResolvedValue(undefined);
+  const readFileMock = vi.fn();
   const openTextDocumentMock = vi.fn();
   const findFilesMock = vi.fn();
 
   return {
+    window: {
+      activeTextEditor: undefined
+    },
     workspace: {
       workspaceFolders: [
         {
+          name: 'mock-workspace',
           uri: {
             fsPath: '/mock/workspace',
             scheme: 'file'
@@ -20,7 +25,8 @@ vi.mock('vscode', () => {
       ],
       fs: {
         stat: statMock,
-        writeFile: writeFileMock
+        writeFile: writeFileMock,
+        readFile: readFileMock
       },
       openTextDocument: openTextDocumentMock,
       findFiles: findFilesMock,
@@ -68,8 +74,42 @@ describe('PromptManager', () => {
     });
   });
 
+  describe('detectWorkspaceTechnologies', () => {
+    it('should detect tech stack from package.json and project files', async () => {
+      (vscode.workspace.fs.stat as unknown as ReturnType<typeof vi.fn>).mockImplementation((uri: { fsPath: string }) => {
+        if (uri.fsPath.endsWith('package.json')) return Promise.resolve({ type: 1 });
+        if (uri.fsPath.endsWith('tsconfig.json')) return Promise.resolve({ type: 1 });
+        return Promise.reject(new Error('File not found'));
+      });
+
+      const pkgContent = JSON.stringify({
+        dependencies: { react: '^18.0.0' },
+        devDependencies: { typescript: '^5.0.0', vitest: '^1.0.0' }
+      });
+      (vscode.workspace.fs.readFile as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        new TextEncoder().encode(pkgContent)
+      );
+
+      const techs = await promptManager.detectWorkspaceTechnologies();
+      expect(techs).toContain('Node.js');
+      expect(techs).toContain('TypeScript');
+      expect(techs).toContain('React');
+      expect(techs).toContain('Vitest');
+    });
+  });
+
+  describe('interpolateTemplate', () => {
+    it('should substitute template variables with editor/workspace metadata', async () => {
+      const raw = 'Refactor ${selectedText} in ${filePath} (${languageId}) for project ${workspaceName}';
+      const interpolated = await promptManager.interpolateTemplate(raw);
+      expect(interpolated).toBe('Refactor  in  () for project mock-workspace');
+    });
+  });
+
   describe('generateDefaultInstructions', () => {
     it('should write default copilot instructions to .github/copilot-instructions.md', async () => {
+      (vscode.workspace.fs.stat as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('File not found'));
+
       const resultUri = await promptManager.generateDefaultInstructions();
 
       expect(resultUri).toBeDefined();
