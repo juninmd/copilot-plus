@@ -65,6 +65,12 @@
         "icon": "$(history)"
       },
       {
+        "command": "copilotPlus.auditContext",
+        "title": "Audit Copilot Context & Instructions",
+        "category": "Copilot+",
+        "icon": "$(dashboard)"
+      },
+      {
         "command": "copilotPlus.generateInstructions",
         "title": "Generate Workspace Copilot Instructions",
         "category": "Copilot+",
@@ -140,6 +146,11 @@
           "group": "navigation"
         },
         {
+          "command": "copilotPlus.auditContext",
+          "when": "view == copilotPlus.prompts",
+          "group": "navigation"
+        },
+        {
           "command": "copilotPlus.generateInstructions",
           "when": "view == copilotPlus.prompts",
           "group": "navigation"
@@ -203,6 +214,16 @@
             }
           }
         }
+      },
+      {
+        "id": "copilotPlus_auditContext",
+        "name": "audit_copilot_context",
+        "displayName": "Audit Copilot Context & Instructions",
+        "modelDescription": "Audits workspace .github/copilot-instructions.md, prompt templates, active file token load, and context health.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
       }
     ],
     "chatParticipants": [
@@ -222,6 +243,10 @@
           {
             "name": "turbo",
             "description": "Enable experimental Copilot features"
+          },
+          {
+            "name": "audit",
+            "description": "Audit workspace Copilot instructions, prompt templates, and token budget efficiency"
           }
         ]
       }

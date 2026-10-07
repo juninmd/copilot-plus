@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { QuotaService } from './quota-service';
 import { RequestTracker } from './request-tracker';
 import { recommendModel } from './model-advisor';
+import { ContextAuditor } from './context-auditor';
 
 export class GetQuotaTool implements vscode.LanguageModelTool<Record<string, unknown>> {
   constructor(
@@ -57,6 +58,17 @@ export class RecommendModelTool implements vscode.LanguageModelTool<RecommendMod
   }
 }
 
+export class AuditContextTool implements vscode.LanguageModelTool<Record<string, unknown>> {
+  constructor(private readonly auditor: ContextAuditor = new ContextAuditor()) {}
+
+  public async invoke(): Promise<vscode.LanguageModelToolResult> {
+    const audit = await this.auditor.auditWorkspace();
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(JSON.stringify(audit, null, 2))
+    ]);
+  }
+}
+
 export function registerCopilotTools(
   quotaService: QuotaService,
   tracker: RequestTracker
@@ -65,9 +77,11 @@ export function registerCopilotTools(
 
   try {
     if (typeof vscode.lm?.registerTool === 'function') {
+      const auditor = new ContextAuditor();
       disposables.push(
         vscode.lm.registerTool('copilotPlus_getQuota', new GetQuotaTool(quotaService, tracker)),
-        vscode.lm.registerTool('copilotPlus_recommendModel', new RecommendModelTool())
+        vscode.lm.registerTool('copilotPlus_recommendModel', new RecommendModelTool()),
+        vscode.lm.registerTool('copilotPlus_auditContext', new AuditContextTool(auditor))
       );
     }
   } catch {

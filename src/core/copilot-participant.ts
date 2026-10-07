@@ -5,6 +5,7 @@ import { recommendModel } from './model-advisor';
 import { applyTurboSettings } from './turbo';
 import { TurboSettingsApplier } from './turbo-settings-applier';
 import { Logger } from './logger';
+import { ContextAuditor } from './context-auditor';
 
 export function registerCopilotParticipant(
   quotaService: QuotaService,
@@ -82,12 +83,38 @@ export function registerCopilotParticipant(
             return;
           }
 
+          if (request.command === 'audit') {
+            response.progress('Auditing Copilot workspace context & prompt instructions...');
+            const auditor = new ContextAuditor();
+            const audit = await auditor.auditWorkspace();
+
+            response.markdown('### 🔍 Copilot Context Health Audit\n\n');
+            response.markdown(`- **Context Health Score:** **${audit.score}/100** (${audit.rating})\n`);
+            response.markdown(`- **Estimated Context Tokens:** ~${audit.estimatedTokens.total} tokens (Instructions: ~${audit.estimatedTokens.instructions}, Templates: ~${audit.estimatedTokens.promptTemplates}, Active File: ~${audit.estimatedTokens.activeFile})\n`);
+            response.markdown(`- **Workspace Instructions:** ${audit.hasInstructions ? `\`${audit.instructionsPath}\`` : '❌ Missing'}\n`);
+            response.markdown(`- **Prompt Templates:** ${audit.templateCount} custom template(s)\n`);
+            response.markdown(`- **Detected Stack:** ${audit.detectedTechStack.length > 0 ? audit.detectedTechStack.join(', ') : 'None'}\n\n`);
+
+            if (audit.findings.length > 0) {
+              response.markdown('#### 📋 Findings & Recommendations\n');
+              for (const f of audit.findings) {
+                const icon = f.type === 'error' ? '❌' : f.type === 'warning' ? '⚠️' : 'ℹ️';
+                response.markdown(`- ${icon} **${f.message}**\n`);
+                if (f.suggestion) {
+                  response.markdown(`  *Suggestion:* ${f.suggestion}\n`);
+                }
+              }
+            }
+            return;
+          }
+
           // Default handler
           response.markdown('### 🤖 Copilot+ Assistant\n\n');
           response.markdown('I am your Copilot+ assistant! Here is how I can help you:\n\n');
           response.markdown('- `@copilotPlus /quota` — Check remaining monthly quota and session usage.\n');
           response.markdown('- `@copilotPlus /recommend [task]` — Get optimal model recommendations for your task.\n');
           response.markdown('- `@copilotPlus /turbo` — Enable cutting-edge Copilot workspace settings.\n');
+          response.markdown('- `@copilotPlus /audit` — Audit workspace prompt context, instructions, and token efficiency.\n');
         }
       );
 

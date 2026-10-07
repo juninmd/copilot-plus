@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
-import { GetQuotaTool, RecommendModelTool } from './copilot-tools';
+import { GetQuotaTool, RecommendModelTool, AuditContextTool } from './copilot-tools';
 import { QuotaService } from './quota-service';
 import { RequestTracker } from './request-tracker';
+import { ContextAuditor } from './context-auditor';
 
 vi.mock('vscode', () => {
   class LanguageModelTextPart {
@@ -14,9 +15,15 @@ vi.mock('vscode', () => {
 
   return {
     workspace: {
+      workspaceFolders: [
+        { name: 'mock', uri: { fsPath: '/mock', scheme: 'file' } }
+      ],
       getConfiguration: (): { get: (_key: string, defaultValue: unknown) => unknown } => ({
         get: (_key: string, defaultValue: unknown): unknown => defaultValue
       })
+    },
+    window: {
+      activeTextEditor: undefined
     },
     LanguageModelTextPart,
     LanguageModelToolResult,
@@ -73,6 +80,32 @@ describe('Copilot Tools', () => {
       expect(parsed.task).toBe('complex architecture');
       expect(parsed.recommendedModel).toContain('Claude');
       expect(parsed.multiplier).toBe(1);
+    });
+  });
+
+  describe('AuditContextTool', () => {
+    it('should return context health audit JSON summary', async () => {
+      const mockAuditor = {
+        auditWorkspace: vi.fn().mockResolvedValue({
+          score: 85,
+          rating: 'Good',
+          estimatedTokens: { instructions: 100, promptTemplates: 50, activeFile: 0, total: 150 },
+          hasInstructions: true,
+          templateCount: 1,
+          detectedTechStack: ['TypeScript'],
+          findings: []
+        })
+      } as unknown as ContextAuditor;
+
+      const tool = new AuditContextTool(mockAuditor);
+      const result = await tool.invoke();
+
+      expect(result.content).toHaveLength(1);
+      const part = result.content[0] as { value: string };
+      const parsed = JSON.parse(part.value);
+      expect(parsed.score).toBe(85);
+      expect(parsed.rating).toBe('Good');
+      expect(parsed.hasInstructions).toBe(true);
     });
   });
 });
