@@ -21,10 +21,29 @@ vi.mock('vscode', () => {
 
   return {
     workspace: {
+      workspaceFolders: [
+        { name: 'mock-workspace', uri: { fsPath: '/mock/workspace', scheme: 'file' } }
+      ],
       getConfiguration: (): { get: (_key: string, defaultValue: unknown) => unknown; update: () => Promise<void> } => ({
         get: (_key: string, defaultValue: unknown): unknown => defaultValue,
         update: vi.fn().mockResolvedValue(undefined)
+      }),
+      openTextDocument: vi.fn(),
+      findFiles: vi.fn().mockResolvedValue([]),
+      asRelativePath: (uri: { fsPath: string }): string => uri.fsPath.replace('/mock/workspace/', '')
+    },
+    window: {
+      activeTextEditor: undefined
+    },
+    Uri: {
+      file: (p: string): { fsPath: string; scheme: string } => ({ fsPath: p, scheme: 'file' }),
+      joinPath: (base: { fsPath: string }, ...paths: string[]): { fsPath: string; scheme: string } => ({
+        fsPath: [base.fsPath, ...paths].join('/'),
+        scheme: 'file'
       })
+    },
+    FileType: {
+      File: 1
     },
     ThemeIcon,
     chat: {
@@ -118,5 +137,34 @@ describe('Copilot Participant', () => {
     expect(fullMarkdown).toContain('Model Recommendation');
     expect(fullMarkdown).toContain('quick bug fix');
     expect(fullMarkdown).toContain('0.33');
+  });
+
+  it('should handle /audit command', async () => {
+    let handler: ChatHandler | undefined;
+    (vscode.chat.createChatParticipant as unknown as ReturnType<typeof vi.fn>).mockImplementation((_id: string, fn: ChatHandler) => {
+      handler = fn;
+      return { iconPath: null };
+    });
+
+    registerCopilotParticipant(mockQuotaService, mockTracker, mockLogger);
+
+    const markdownOutput: string[] = [];
+    const mockResponse = {
+      progress: vi.fn(),
+      markdown: (msg: string): number => markdownOutput.push(msg)
+    };
+
+    if (handler) {
+      await handler(
+        { command: 'audit', prompt: '' },
+        {},
+        mockResponse,
+        {}
+      );
+    }
+
+    const fullMarkdown = markdownOutput.join('');
+    expect(fullMarkdown).toContain('Copilot Context Health Audit');
+    expect(fullMarkdown).toContain('Context Health Score:');
   });
 });

@@ -15,6 +15,7 @@ import { applyTurboSettings } from './turbo';
 import { TurboSettingsApplier } from './turbo-settings-applier';
 import { registerCopilotTools } from './copilot-tools';
 import { registerCopilotParticipant } from './copilot-participant';
+import { ContextAuditor } from './context-auditor';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -26,6 +27,7 @@ export class ExtensionManager implements vscode.Disposable {
   private readonly mcpExplorer: McpExplorerProvider;
   private readonly promptsExplorer: PromptsExplorerProvider;
   private readonly promptManager: PromptManager;
+  private readonly contextAuditor: ContextAuditor;
   private readonly quotaService: QuotaService;
   private readonly turboSettingsApplier: TurboSettingsApplier;
 
@@ -38,6 +40,7 @@ export class ExtensionManager implements vscode.Disposable {
     this.quotaService = new QuotaService(logger);
     this.turboSettingsApplier = new TurboSettingsApplier();
     this.promptManager = new PromptManager();
+    this.contextAuditor = new ContextAuditor(this.promptManager);
     this.tracker = new RequestTracker(context.globalState);
     this.statusBar = new StatusBarProvider(this.tracker, this.logger, this.quotaService);
 
@@ -131,6 +134,27 @@ export class ExtensionManager implements vscode.Disposable {
       }),
       vscode.commands.registerCommand('copilotPlus.recommendModel', async () => {
         await recommendModelQuickPick();
+      }),
+      vscode.commands.registerCommand('copilotPlus.auditContext', async () => {
+        const audit = await this.contextAuditor.auditWorkspace();
+        const action = await vscode.window.showInformationMessage(
+          `Copilot Context Health Score: ${audit.score}/100 (${audit.rating}). Estimated Context: ~${audit.estimatedTokens.total} tokens.`,
+          audit.hasInstructions ? 'Open Instructions' : 'Generate Instructions',
+          'Create Prompt Template'
+        );
+
+        if (action === 'Generate Instructions') {
+          await vscode.commands.executeCommand('copilotPlus.generateInstructions');
+        } else if (action === 'Open Instructions' && audit.instructionsPath) {
+          const workspaceFolders = vscode.workspace.workspaceFolders;
+          if (workspaceFolders && workspaceFolders.length > 0) {
+            const uri = vscode.Uri.joinPath(workspaceFolders[0].uri, audit.instructionsPath);
+            const doc = await vscode.workspace.openTextDocument(uri);
+            await vscode.window.showTextDocument(doc);
+          }
+        } else if (action === 'Create Prompt Template') {
+          await vscode.commands.executeCommand('copilotPlus.createPromptTemplate');
+        }
       }),
       vscode.commands.registerCommand('copilotPlus.generateInstructions', async () => {
         try {
