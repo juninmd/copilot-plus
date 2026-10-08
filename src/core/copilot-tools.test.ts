@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
-import { GetQuotaTool, RecommendModelTool, AuditContextTool } from './copilot-tools';
+import { GetQuotaTool, RecommendModelTool, AuditContextTool, OptimizePromptTool } from './copilot-tools';
 import { QuotaService } from './quota-service';
 import { RequestTracker } from './request-tracker';
 import { ContextAuditor } from './context-auditor';
+import { PromptManager } from './prompt-manager';
 
 vi.mock('vscode', () => {
   class LanguageModelTextPart {
@@ -106,6 +107,28 @@ describe('Copilot Tools', () => {
       expect(parsed.score).toBe(85);
       expect(parsed.rating).toBe('Good');
       expect(parsed.hasInstructions).toBe(true);
+    });
+  });
+
+  describe('OptimizePromptTool', () => {
+    it('should return optimized prompt JSON output', async () => {
+      const mockPromptManager = {
+        detectWorkspaceTechnologies: vi.fn().mockResolvedValue(['TypeScript', 'NestJS'])
+      } as unknown as PromptManager;
+
+      const tool = new OptimizePromptTool(mockPromptManager);
+      const result = await tool.invoke({
+        input: { prompt: 'Implement user login endpoint', taskType: 'feature' },
+        toolInvocationToken: undefined as unknown as vscode.ChatParticipantToolToken
+      });
+
+      expect(result.content).toHaveLength(1);
+      const part = result.content[0] as { value: string };
+      const parsed = JSON.parse(part.value);
+      expect(parsed.originalPrompt).toBe('Implement user login endpoint');
+      expect(parsed.taskType).toBe('feature');
+      expect(parsed.detectedStack).toEqual(['TypeScript', 'NestJS']);
+      expect(parsed.optimizedPrompt).toContain('TypeScript, NestJS');
     });
   });
 });

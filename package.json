@@ -224,6 +224,28 @@
           "type": "object",
           "properties": {}
         }
+      },
+      {
+        "id": "copilotPlus_optimizePrompt",
+        "name": "optimize_copilot_prompt",
+        "displayName": "Optimize Copilot Prompt",
+        "modelDescription": "Transforms raw coding requests into highly structured, context-aware Copilot prompts tailored to project tech stack.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Raw user prompt or feature description to optimize."
+            },
+            "taskType": {
+              "type": "string",
+              "description": "Optional category e.g. refactor, bugfix, architecture, tests, review."
+            }
+          },
+          "required": [
+            "prompt"
+          ]
+        }
       }
     ],
     "chatParticipants": [
@@ -247,6 +269,10 @@
           {
             "name": "audit",
             "description": "Audit workspace Copilot instructions, prompt templates, and token budget efficiency"
+          },
+          {
+            "name": "optimize",
+            "description": "Optimize a raw prompt into a structured, stack-aware Copilot prompt"
           }
         ]
       }

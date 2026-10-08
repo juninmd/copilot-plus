@@ -118,6 +118,31 @@ describe('PromptManager', () => {
         expect.any(Uint8Array)
       );
     });
+
+    it('should include framework directives when stack is detected', async () => {
+      (vscode.workspace.fs.stat as unknown as ReturnType<typeof vi.fn>).mockImplementation((uri: { fsPath: string }) => {
+        if (uri.fsPath.endsWith('package.json')) return Promise.resolve({ type: 1 });
+        return Promise.reject(new Error('File not found'));
+      });
+
+      const pkgContent = JSON.stringify({
+        dependencies: { '@nestjs/core': '^10.0.0' },
+        devDependencies: { typescript: '^5.0.0' }
+      });
+      (vscode.workspace.fs.readFile as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        new TextEncoder().encode(pkgContent)
+      );
+
+      await promptManager.generateDefaultInstructions();
+
+      const writeFileCall = (vscode.workspace.fs.writeFile as unknown as ReturnType<typeof vi.fn>).mock.calls.find(
+        (call: unknown[]) => (call[0] as { fsPath: string }).fsPath.includes('.github/copilot-instructions.md')
+      );
+      expect(writeFileCall).toBeDefined();
+      const contentStr = new TextDecoder().decode(writeFileCall![1] as Uint8Array);
+      expect(contentStr).toContain('Framework & Language Directives');
+      expect(contentStr).toContain('NestJS');
+    });
   });
 
   describe('createSamplePromptTemplate', () => {
