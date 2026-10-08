@@ -6,6 +6,7 @@ import { applyTurboSettings } from './turbo';
 import { TurboSettingsApplier } from './turbo-settings-applier';
 import { Logger } from './logger';
 import { ContextAuditor } from './context-auditor';
+import { PromptManager } from './prompt-manager';
 
 export function registerCopilotParticipant(
   quotaService: QuotaService,
@@ -108,6 +109,28 @@ export function registerCopilotParticipant(
             return;
           }
 
+          if (request.command === 'optimize') {
+            response.progress('Optimizing prompt for project tech stack...');
+            const promptMgr = new PromptManager();
+            const techStack = await promptMgr.detectWorkspaceTechnologies();
+            const raw = request.prompt?.trim() || 'Implement clean, well-tested feature code.';
+            const stackText = techStack.length > 0 ? techStack.join(', ') : 'Software Engineering';
+
+            response.markdown('### ✨ Optimized Copilot Prompt\n\n');
+            response.markdown(`**Detected Stack:** ${stackText}\n\n`);
+            response.markdown('```markdown\n');
+            response.markdown(`### Role & Context\n`);
+            response.markdown(`You are an expert developer specializing in ${stackText}.\n\n`);
+            response.markdown(`### Objective\n`);
+            response.markdown(`${raw}\n\n`);
+            response.markdown(`### Quality & Architectural Standards\n`);
+            response.markdown(`- Adhere to Clean Code, SOLID, DRY, KISS, and YAGNI principles.\n`);
+            response.markdown(`- Ensure modular structure, strict typing, and comprehensive tests.\n`);
+            response.markdown(`- Provide production-grade implementation with zero conversational filler.\n`);
+            response.markdown('```\n');
+            return;
+          }
+
           // Default handler
           response.markdown('### 🤖 Copilot+ Assistant\n\n');
           response.markdown('I am your Copilot+ assistant! Here is how I can help you:\n\n');
@@ -115,6 +138,7 @@ export function registerCopilotParticipant(
           response.markdown('- `@copilotPlus /recommend [task]` — Get optimal model recommendations for your task.\n');
           response.markdown('- `@copilotPlus /turbo` — Enable cutting-edge Copilot workspace settings.\n');
           response.markdown('- `@copilotPlus /audit` — Audit workspace prompt context, instructions, and token efficiency.\n');
+          response.markdown('- `@copilotPlus /optimize [prompt]` — Optimize a raw prompt into a structured, stack-aware Copilot prompt.\n');
         }
       );
 

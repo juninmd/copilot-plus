@@ -139,6 +139,38 @@ export class PromptManager {
       .replace(/\$\{workspaceName\}/g, workspaceName);
   }
 
+  private getStackSpecificGuidelines(techStack: string[]): string {
+    const guidelines: string[] = [];
+
+    if (techStack.includes('TypeScript') || techStack.includes('Node.js')) {
+      guidelines.push('- **TypeScript/Node.js:** Enforce strict typing (`noImplicitAny`), avoid `any`, prefer `unknown`, and handle async/await promises properly.');
+    }
+    if (techStack.includes('NestJS')) {
+      guidelines.push('- **NestJS:** Adhere strictly to modular architecture, Dependency Injection, class-validator DTOs, and clean Controller-Service separation.');
+    }
+    if (techStack.includes('React')) {
+      guidelines.push('- **React:** Use functional components with hooks, immutable state updates, and optimize render cycles.');
+    }
+    if (techStack.includes('Python')) {
+      guidelines.push('- **Python:** Follow PEP 8 guidelines, use explicit type hints, and leverage `asyncio` for non-blocking I/O operations.');
+    }
+    if (techStack.includes('Flutter')) {
+      guidelines.push('- **Flutter:** Maintain clean widget composition, sound null-safety, and decoupled state management.');
+    }
+    if (techStack.includes('Rust')) {
+      guidelines.push('- **Rust:** Leverage ownership, pattern matching, explicit error handling with `Result`, and zero `unsafe` blocks.');
+    }
+    if (techStack.includes('Go')) {
+      guidelines.push('- **Go:** Follow idiomatic Go conventions, handle errors explicitly (`if err != nil`), and keep interfaces small and cohesive.');
+    }
+
+    if (guidelines.length === 0) {
+      return '';
+    }
+
+    return `\n## Framework & Language Directives\n${guidelines.join('\n')}\n`;
+  }
+
   public async generateDefaultInstructions(): Promise<vscode.Uri | null> {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -153,6 +185,8 @@ export class PromptManager {
       ? techStack.map((t) => `- **${t}**`).join('\n')
       : '- General Software Engineering';
 
+    const stackGuidelines = this.getStackSpecificGuidelines(techStack);
+
     const defaultContent = `# GitHub Copilot Workspace Instructions
 
 ## Project Tech Stack
@@ -163,7 +197,7 @@ ${techStackList}
 - **Architecture:** Keep modules decoupled, cohesive, and follow clean architectural boundaries.
 - **Testing:** Write high-coverage unit and integration tests.
 - **Refactoring:** Keep functions small, single-purpose, and free of side effects.
-
+${stackGuidelines}
 ## Interaction Rules
 - Deliver direct, production-ready code with zero fluff or conversational filler.
 - Respect existing code formatting and project architectural decisions.

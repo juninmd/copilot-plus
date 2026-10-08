@@ -167,4 +167,33 @@ describe('Copilot Participant', () => {
     expect(fullMarkdown).toContain('Copilot Context Health Audit');
     expect(fullMarkdown).toContain('Context Health Score:');
   });
+
+  it('should handle /optimize command', async () => {
+    let handler: ChatHandler | undefined;
+    (vscode.chat.createChatParticipant as unknown as ReturnType<typeof vi.fn>).mockImplementation((_id: string, fn: ChatHandler) => {
+      handler = fn;
+      return { iconPath: null };
+    });
+
+    registerCopilotParticipant(mockQuotaService, mockTracker, mockLogger);
+
+    const markdownOutput: string[] = [];
+    const mockResponse = {
+      progress: vi.fn(),
+      markdown: (msg: string): number => markdownOutput.push(msg)
+    };
+
+    if (handler) {
+      await handler(
+        { command: 'optimize', prompt: 'Refactor authentication module' },
+        {},
+        mockResponse,
+        {}
+      );
+    }
+
+    const fullMarkdown = markdownOutput.join('');
+    expect(fullMarkdown).toContain('Optimized Copilot Prompt');
+    expect(fullMarkdown).toContain('Refactor authentication module');
+  });
 });
