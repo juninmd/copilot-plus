@@ -136,14 +136,28 @@ export class ContextAuditor {
     let activeFileTokens = 0;
     const editor = vscode.window.activeTextEditor;
     if (editor) {
-      activeFileTokens = this.estimateTokenCount(editor.document.getText());
+      const doc = editor.document;
+      activeFileTokens = this.estimateTokenCount(doc.getText());
       if (activeFileTokens > 3000) {
         findings.push({
           type: 'info',
           category: 'active_file',
-          message: `Active file \`${vscode.workspace.asRelativePath(editor.document.uri)}\` is large (~${activeFileTokens} tokens).`,
+          message: `Active file \`${vscode.workspace.asRelativePath(doc.uri)}\` is large (~${activeFileTokens} tokens).`,
           suggestion: 'When asking questions, consider selecting specific code blocks rather than referencing the whole file.'
         });
+      }
+
+      if (instructionsFile && instructionsContent) {
+        const lang = doc.languageId;
+        const knownLanguages = ['typescript', 'javascript', 'python', 'go', 'rust', 'dart', 'html', 'css'];
+        if (knownLanguages.includes(lang) && !instructionsContent.toLowerCase().includes(lang)) {
+          findings.push({
+            type: 'warning',
+            category: 'active_file',
+            message: `Active file language \`${lang}\` has no explicit mention in copilot-instructions.md.`,
+            suggestion: `Add explicit code style and testing directives for \`${lang}\` in workspace instructions.`
+          });
+        }
       }
     }
 

@@ -112,21 +112,31 @@ export function registerCopilotParticipant(
           if (request.command === 'optimize') {
             response.progress('Optimizing prompt for project tech stack...');
             const promptMgr = new PromptManager();
+            const auditor = new ContextAuditor(promptMgr);
             const techStack = await promptMgr.detectWorkspaceTechnologies();
             const raw = request.prompt?.trim() || 'Implement clean, well-tested feature code.';
             const stackText = techStack.length > 0 ? techStack.join(', ') : 'Software Engineering';
 
+            const optimizedText = [
+              `### Role & Context`,
+              `You are an expert developer specializing in ${stackText}.`,
+              ``,
+              `### Objective`,
+              `${raw}`,
+              ``,
+              `### Quality & Architectural Standards`,
+              `- Adhere to Clean Code, SOLID, DRY, KISS, and YAGNI principles.`,
+              `- Ensure modular structure, strict typing, and comprehensive tests.`,
+              `- Provide production-grade implementation with zero conversational filler.`
+            ].join('\n');
+
+            const tokenEst = auditor.estimateTokenCount(optimizedText);
+
             response.markdown('### ✨ Optimized Copilot Prompt\n\n');
-            response.markdown(`**Detected Stack:** ${stackText}\n\n`);
+            response.markdown(`- **Detected Stack:** ${stackText}\n`);
+            response.markdown(`- **Estimated Tokens:** ~${tokenEst} tokens\n\n`);
             response.markdown('```markdown\n');
-            response.markdown(`### Role & Context\n`);
-            response.markdown(`You are an expert developer specializing in ${stackText}.\n\n`);
-            response.markdown(`### Objective\n`);
-            response.markdown(`${raw}\n\n`);
-            response.markdown(`### Quality & Architectural Standards\n`);
-            response.markdown(`- Adhere to Clean Code, SOLID, DRY, KISS, and YAGNI principles.\n`);
-            response.markdown(`- Ensure modular structure, strict typing, and comprehensive tests.\n`);
-            response.markdown(`- Provide production-grade implementation with zero conversational filler.\n`);
+            response.markdown(`${optimizedText}\n`);
             response.markdown('```\n');
             return;
           }
