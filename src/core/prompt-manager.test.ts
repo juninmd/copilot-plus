@@ -96,6 +96,28 @@ describe('PromptManager', () => {
       expect(techs).toContain('React');
       expect(techs).toContain('Vitest');
     });
+
+    it('should detect Docker, Next.js, Express, Fastify, and TailwindCSS', async () => {
+      (vscode.workspace.fs.stat as unknown as ReturnType<typeof vi.fn>).mockImplementation((uri: { fsPath: string }) => {
+        if (uri.fsPath.endsWith('package.json')) return Promise.resolve({ type: 1 });
+        if (uri.fsPath.endsWith('Dockerfile')) return Promise.resolve({ type: 1 });
+        return Promise.reject(new Error('File not found'));
+      });
+
+      const pkgContent = JSON.stringify({
+        dependencies: { next: '^14.0.0', express: '^4.18.0', fastify: '^4.0.0', tailwindcss: '^3.0.0' }
+      });
+      (vscode.workspace.fs.readFile as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
+        new TextEncoder().encode(pkgContent)
+      );
+
+      const techs = await promptManager.detectWorkspaceTechnologies();
+      expect(techs).toContain('Next.js');
+      expect(techs).toContain('Express');
+      expect(techs).toContain('Fastify');
+      expect(techs).toContain('TailwindCSS');
+      expect(techs).toContain('Docker');
+    });
   });
 
   describe('interpolateTemplate', () => {

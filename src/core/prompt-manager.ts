@@ -95,14 +95,22 @@ export class PromptManager {
 
         if (allDeps.typescript || await checkFileExists('tsconfig.json')) technologies.push('TypeScript');
         if (allDeps.react || allDeps['react-dom']) technologies.push('React');
+        if (allDeps.next) technologies.push('Next.js');
         if (allDeps['@nestjs/core']) technologies.push('NestJS');
+        if (allDeps.express) technologies.push('Express');
+        if (allDeps.fastify) technologies.push('Fastify');
         if (allDeps.vue) technologies.push('Vue');
         if (allDeps['@angular/core']) technologies.push('Angular');
+        if (allDeps.tailwindcss || await checkFileExists('tailwind.config.js') || await checkFileExists('tailwind.config.ts')) technologies.push('TailwindCSS');
         if (allDeps.vitest) technologies.push('Vitest');
         if (allDeps.jest) technologies.push('Jest');
       } catch {
         // Fallback if parsing fails
       }
+    }
+
+    if (await checkFileExists('Dockerfile') || await checkFileExists('docker-compose.yml') || await checkFileExists('docker-compose.yaml')) {
+      technologies.push('Docker');
     }
 
     if (await checkFileExists('requirements.txt') || await checkFileExists('pyproject.toml')) {
@@ -145,11 +153,23 @@ export class PromptManager {
     if (techStack.includes('TypeScript') || techStack.includes('Node.js')) {
       guidelines.push('- **TypeScript/Node.js:** Enforce strict typing (`noImplicitAny`), avoid `any`, prefer `unknown`, and handle async/await promises properly.');
     }
+    if (techStack.includes('Next.js')) {
+      guidelines.push('- **Next.js:** Prefer App Router, Server Components by default, proper metadata configuration, and optimized image/font loading.');
+    }
     if (techStack.includes('NestJS')) {
       guidelines.push('- **NestJS:** Adhere strictly to modular architecture, Dependency Injection, class-validator DTOs, and clean Controller-Service separation.');
     }
+    if (techStack.includes('Express')) {
+      guidelines.push('- **Express:** Implement robust error-handling middleware, centralize route handlers, and sanitize incoming request inputs.');
+    }
+    if (techStack.includes('Fastify')) {
+      guidelines.push('- **Fastify:** Utilize JSON schema validation, plugin encapsulation with `fastify-plugin`, and async request handlers.');
+    }
     if (techStack.includes('React')) {
       guidelines.push('- **React:** Use functional components with hooks, immutable state updates, and optimize render cycles.');
+    }
+    if (techStack.includes('TailwindCSS')) {
+      guidelines.push('- **TailwindCSS:** Use utility classes cleanly, extract reusable components or `@apply` rules where appropriate, and keep responsive design consistent.');
     }
     if (techStack.includes('Python')) {
       guidelines.push('- **Python:** Follow PEP 8 guidelines, use explicit type hints, and leverage `asyncio` for non-blocking I/O operations.');
@@ -162,6 +182,9 @@ export class PromptManager {
     }
     if (techStack.includes('Go')) {
       guidelines.push('- **Go:** Follow idiomatic Go conventions, handle errors explicitly (`if err != nil`), and keep interfaces small and cohesive.');
+    }
+    if (techStack.includes('Docker')) {
+      guidelines.push('- **Docker:** Use multi-stage builds, minimal base images (e.g. alpine/distroless), and follow non-root container user security practices.');
     }
 
     if (guidelines.length === 0) {

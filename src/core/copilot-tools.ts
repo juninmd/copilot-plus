@@ -40,10 +40,14 @@ export class OptimizePromptTool implements vscode.LanguageModelTool<OptimizeProm
       `3. Corresponding unit/integration test cases.`
     ].join('\n');
 
+    const auditor = new ContextAuditor(this.promptManager);
+    const estimatedTokens = auditor.estimateTokenCount(structuredPrompt);
+
     const result = {
       originalPrompt: rawPrompt,
       taskType,
       detectedStack: techStack,
+      estimatedTokens,
       optimizedPrompt: structuredPrompt
     };
 

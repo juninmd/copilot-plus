@@ -91,5 +91,37 @@ describe('ContextAuditor', () => {
       expect(audit.rating).toBe('Optimal');
       expect(audit.estimatedTokens.total).toBeGreaterThan(0);
     });
+
+    it('should warn if active editor language is not mentioned in instructions', async () => {
+      const mockUri = { fsPath: '/mock/workspace/.github/copilot-instructions.md', scheme: 'file' } as vscode.Uri;
+      vi.spyOn(mockPromptManager, 'getWorkspaceInstructions').mockResolvedValue({
+        name: 'copilot-instructions.md',
+        relativePath: '.github/copilot-instructions.md',
+        uri: mockUri,
+        type: 'instruction'
+      });
+      vi.spyOn(mockPromptManager, 'getWorkspacePromptTemplates').mockResolvedValue([]);
+      vi.spyOn(mockPromptManager, 'detectWorkspaceTechnologies').mockResolvedValue([]);
+
+      (vscode.workspace.openTextDocument as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+        getText: (): string => '# Standards\nGeneral rules only.'
+      });
+
+      // Mock active editor with Python document
+      (vscode.window as unknown as { activeTextEditor: unknown }).activeTextEditor = {
+        document: {
+          uri: { fsPath: '/mock/workspace/script.py', scheme: 'file' },
+          getText: (): string => 'print("hello")',
+          languageId: 'python'
+        }
+      };
+
+      const audit = await auditor.auditWorkspace();
+
+      expect(audit.findings.some((f) => f.message.includes('Active file language `python` has no explicit mention'))).toBe(true);
+
+      // Reset mock
+      (vscode.window as unknown as { activeTextEditor: unknown }).activeTextEditor = undefined;
+    });
   });
 });
