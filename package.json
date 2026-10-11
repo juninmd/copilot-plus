@@ -93,6 +93,12 @@
         "title": "Recommend Optimal Model",
         "category": "Copilot+",
         "icon": "$(lightbulb)"
+      },
+      {
+        "command": "copilotPlus.reviewChanges",
+        "title": "Review Git Changes",
+        "category": "Copilot+",
+        "icon": "$(git-pull-request)"
       }
     ],
     "viewsContainers": {
@@ -143,6 +149,11 @@
         {
           "command": "copilotPlus.recommendModel",
           "when": "view == copilotPlus.models",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.reviewChanges",
+          "when": "view == copilotPlus.prompts || view == copilotPlus.agents",
           "group": "navigation"
         },
         {
@@ -246,6 +257,21 @@
             "prompt"
           ]
         }
+      },
+      {
+        "id": "copilotPlus_reviewChanges",
+        "name": "review_git_changes",
+        "displayName": "Review Git Changes",
+        "modelDescription": "Performs automated security, performance, and Clean Code review on uncommitted Git diffs.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "stagedOnly": {
+              "type": "boolean",
+              "description": "Whether to analyze only staged git changes."
+            }
+          }
+        }
       }
     ],
     "chatParticipants": [
@@ -273,6 +299,10 @@
           {
             "name": "optimize",
             "description": "Optimize a raw prompt into a structured, stack-aware Copilot prompt"
+          },
+          {
+            "name": "review",
+            "description": "Perform automated security & quality code review on workspace Git diff"
           }
         ]
       }

@@ -7,6 +7,7 @@ import { TurboSettingsApplier } from './turbo-settings-applier';
 import { Logger } from './logger';
 import { ContextAuditor } from './context-auditor';
 import { PromptManager } from './prompt-manager';
+import { DiffReviewer } from './diff-reviewer';
 
 export function registerCopilotParticipant(
   quotaService: QuotaService,
@@ -141,6 +142,16 @@ export function registerCopilotParticipant(
             return;
           }
 
+          if (request.command === 'review') {
+            response.progress('Analyzing workspace Git diff...');
+            const reviewer = new DiffReviewer();
+            const stagedOnly = request.prompt?.includes('staged') ?? false;
+            const reviewResult = await reviewer.getWorkspaceDiff(undefined, stagedOnly);
+
+            response.markdown(`${reviewResult.summaryMarkdown}\n`);
+            return;
+          }
+
           // Default handler
           response.markdown('### 🤖 Copilot+ Assistant\n\n');
           response.markdown('I am your Copilot+ assistant! Here is how I can help you:\n\n');
@@ -149,6 +160,7 @@ export function registerCopilotParticipant(
           response.markdown('- `@copilotPlus /turbo` — Enable cutting-edge Copilot workspace settings.\n');
           response.markdown('- `@copilotPlus /audit` — Audit workspace prompt context, instructions, and token efficiency.\n');
           response.markdown('- `@copilotPlus /optimize [prompt]` — Optimize a raw prompt into a structured, stack-aware Copilot prompt.\n');
+          response.markdown('- `@copilotPlus /review` — Perform automated security & quality code review on workspace Git diff.\n');
         }
       );
 

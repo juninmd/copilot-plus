@@ -16,6 +16,7 @@ import { TurboSettingsApplier } from './turbo-settings-applier';
 import { registerCopilotTools } from './copilot-tools';
 import { registerCopilotParticipant } from './copilot-participant';
 import { ContextAuditor } from './context-auditor';
+import { DiffReviewer } from './diff-reviewer';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -134,6 +135,18 @@ export class ExtensionManager implements vscode.Disposable {
       }),
       vscode.commands.registerCommand('copilotPlus.recommendModel', async () => {
         await recommendModelQuickPick();
+      }),
+      vscode.commands.registerCommand('copilotPlus.reviewChanges', async () => {
+        const reviewer = new DiffReviewer();
+        const review = await reviewer.getWorkspaceDiff();
+        vscode.window.showInformationMessage(
+          `Git Review: ${review.files.length} file(s) modified (+${review.totalAdditions}/-${review.totalDeletions}). ${review.issues.length} issue(s) found.`,
+          'Open Chat'
+        ).then((action) => {
+          if (action === 'Open Chat') {
+            void vscode.commands.executeCommand('workbench.action.chat.open', '@copilotPlus /review');
+          }
+        });
       }),
       vscode.commands.registerCommand('copilotPlus.auditContext', async () => {
         const audit = await this.contextAuditor.auditWorkspace();

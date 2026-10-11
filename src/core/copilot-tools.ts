@@ -4,6 +4,26 @@ import { RequestTracker } from './request-tracker';
 import { recommendModel } from './model-advisor';
 import { ContextAuditor } from './context-auditor';
 import { PromptManager } from './prompt-manager';
+import { DiffReviewer } from './diff-reviewer';
+
+export interface ReviewChangesToolInput {
+  stagedOnly?: boolean;
+}
+
+export class ReviewChangesTool implements vscode.LanguageModelTool<ReviewChangesToolInput> {
+  constructor(private readonly reviewer: DiffReviewer = new DiffReviewer()) {}
+
+  public async invoke(
+    options: vscode.LanguageModelToolInvocationOptions<ReviewChangesToolInput>
+  ): Promise<vscode.LanguageModelToolResult> {
+    const stagedOnly = options.input?.stagedOnly ?? false;
+    const reviewResult = await this.reviewer.getWorkspaceDiff(undefined, stagedOnly);
+
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(JSON.stringify(reviewResult, null, 2))
+    ]);
+  }
+}
 
 export interface OptimizePromptToolInput {
   prompt?: string;
@@ -136,7 +156,8 @@ export function registerCopilotTools(
         vscode.lm.registerTool('copilotPlus_getQuota', new GetQuotaTool(quotaService, tracker)),
         vscode.lm.registerTool('copilotPlus_recommendModel', new RecommendModelTool()),
         vscode.lm.registerTool('copilotPlus_auditContext', new AuditContextTool(auditor)),
-        vscode.lm.registerTool('copilotPlus_optimizePrompt', new OptimizePromptTool(promptManager))
+        vscode.lm.registerTool('copilotPlus_optimizePrompt', new OptimizePromptTool(promptManager)),
+        vscode.lm.registerTool('copilotPlus_reviewChanges', new ReviewChangesTool(new DiffReviewer()))
       );
     }
   } catch {
