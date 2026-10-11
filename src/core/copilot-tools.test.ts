@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
-import { GetQuotaTool, RecommendModelTool, AuditContextTool, OptimizePromptTool } from './copilot-tools';
+import { GetQuotaTool, RecommendModelTool, AuditContextTool, OptimizePromptTool, ReviewChangesTool } from './copilot-tools';
 import { QuotaService } from './quota-service';
 import { RequestTracker } from './request-tracker';
 import { ContextAuditor } from './context-auditor';
@@ -129,6 +129,35 @@ describe('Copilot Tools', () => {
       expect(parsed.taskType).toBe('feature');
       expect(parsed.detectedStack).toEqual(['TypeScript', 'NestJS']);
       expect(parsed.optimizedPrompt).toContain('TypeScript, NestJS');
+    });
+  });
+
+  describe('ReviewChangesTool', () => {
+    it('should return diff review result JSON', async () => {
+      const mockDiffReviewer = {
+        getWorkspaceDiff: vi.fn().mockResolvedValue({
+          workspacePath: '/mock',
+          files: [],
+          totalAdditions: 0,
+          totalDeletions: 0,
+          issues: [],
+          summaryMarkdown: 'No changes',
+          estimatedTokens: 0
+        })
+      };
+
+      const tool = new ReviewChangesTool(mockDiffReviewer as never);
+      const result = await tool.invoke({
+        input: { stagedOnly: true },
+        toolInvocationToken: undefined as unknown as vscode.ChatParticipantToolToken
+      });
+
+      expect(result.content).toHaveLength(1);
+      const part = result.content[0] as { value: string };
+      const parsed = JSON.parse(part.value);
+      expect(parsed.workspacePath).toBe('/mock');
+      expect(parsed.summaryMarkdown).toBe('No changes');
+      expect(mockDiffReviewer.getWorkspaceDiff).toHaveBeenCalledWith(undefined, true);
     });
   });
 });
