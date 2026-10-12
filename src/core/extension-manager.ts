@@ -17,6 +17,7 @@ import { registerCopilotTools } from './copilot-tools';
 import { registerCopilotParticipant } from './copilot-participant';
 import { ContextAuditor } from './context-auditor';
 import { DiffReviewer } from './diff-reviewer';
+import { ContextCompressor } from './context-compressor';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -145,6 +146,22 @@ export class ExtensionManager implements vscode.Disposable {
         ).then((action) => {
           if (action === 'Open Chat') {
             void vscode.commands.executeCommand('workbench.action.chat.open', '@copilotPlus /review');
+          }
+        });
+      }),
+      vscode.commands.registerCommand('copilotPlus.compressContext', async () => {
+        const compressor = new ContextCompressor();
+        const res = await compressor.compressActiveEditor();
+        if (!res) {
+          vscode.window.showWarningMessage('No active editor open to compress.');
+          return;
+        }
+        vscode.window.showInformationMessage(
+          `Compressed context! Saved ${res.savingsPercentage}% tokens (~${res.originalEstimatedTokens} -> ~${res.compressedEstimatedTokens}).`,
+          'Copy Compressed Code'
+        ).then((action) => {
+          if (action === 'Copy Compressed Code') {
+            void vscode.env.clipboard.writeText(res.compressedText);
           }
         });
       }),

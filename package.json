@@ -99,6 +99,12 @@
         "title": "Review Git Changes",
         "category": "Copilot+",
         "icon": "$(git-pull-request)"
+      },
+      {
+        "command": "copilotPlus.compressContext",
+        "title": "Compress Context",
+        "category": "Copilot+",
+        "icon": "$(zap)"
       }
     ],
     "viewsContainers": {
@@ -153,6 +159,11 @@
         },
         {
           "command": "copilotPlus.reviewChanges",
+          "when": "view == copilotPlus.prompts || view == copilotPlus.agents",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.compressContext",
           "when": "view == copilotPlus.prompts || view == copilotPlus.agents",
           "group": "navigation"
         },
@@ -272,6 +283,25 @@
             }
           }
         }
+      },
+      {
+        "id": "copilotPlus_compressContext",
+        "name": "compress_copilot_context",
+        "displayName": "Compress Context & Extract Signatures",
+        "modelDescription": "Strips unnecessary comments/whitespace or extracts signatures from source code to reduce AI token budget consumption.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Code content to compress. If omitted, compresses active text editor."
+            },
+            "signaturesOnly": {
+              "type": "boolean",
+              "description": "Whether to extract only class/function signatures."
+            }
+          }
+        }
       }
     ],
     "chatParticipants": [
@@ -303,6 +333,10 @@
           {
             "name": "review",
             "description": "Perform automated security & quality code review on workspace Git diff"
+          },
+          {
+            "name": "compress",
+            "description": "Compress code or active document to save Copilot token budget"
           }
         ]
       }

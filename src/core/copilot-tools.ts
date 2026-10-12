@@ -5,6 +5,39 @@ import { recommendModel } from './model-advisor';
 import { ContextAuditor } from './context-auditor';
 import { PromptManager } from './prompt-manager';
 import { DiffReviewer } from './diff-reviewer';
+import { ContextCompressor } from './context-compressor';
+
+export interface CompressContextToolInput {
+  code?: string;
+  signaturesOnly?: boolean;
+}
+
+export class CompressContextTool implements vscode.LanguageModelTool<CompressContextToolInput> {
+  constructor(private readonly compressor: ContextCompressor = new ContextCompressor()) {}
+
+  public async invoke(
+    options: vscode.LanguageModelToolInvocationOptions<CompressContextToolInput>
+  ): Promise<vscode.LanguageModelToolResult> {
+    const signaturesOnly = options.input?.signaturesOnly ?? false;
+    let result;
+
+    if (options.input?.code) {
+      result = this.compressor.compressCode(options.input.code, { signaturesOnly });
+    } else {
+      result = await this.compressor.compressActiveEditor({ signaturesOnly });
+    }
+
+    if (!result) {
+      return new vscode.LanguageModelToolResult([
+        new vscode.LanguageModelTextPart(JSON.stringify({ error: 'No active editor or code provided to compress.' }))
+      ]);
+    }
+
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))
+    ]);
+  }
+}
 
 export interface ReviewChangesToolInput {
   stagedOnly?: boolean;
@@ -157,7 +190,8 @@ export function registerCopilotTools(
         vscode.lm.registerTool('copilotPlus_recommendModel', new RecommendModelTool()),
         vscode.lm.registerTool('copilotPlus_auditContext', new AuditContextTool(auditor)),
         vscode.lm.registerTool('copilotPlus_optimizePrompt', new OptimizePromptTool(promptManager)),
-        vscode.lm.registerTool('copilotPlus_reviewChanges', new ReviewChangesTool(new DiffReviewer()))
+        vscode.lm.registerTool('copilotPlus_reviewChanges', new ReviewChangesTool(new DiffReviewer())),
+        vscode.lm.registerTool('copilotPlus_compressContext', new CompressContextTool(new ContextCompressor()))
       );
     }
   } catch {

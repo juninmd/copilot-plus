@@ -8,6 +8,7 @@ import { Logger } from './logger';
 import { ContextAuditor } from './context-auditor';
 import { PromptManager } from './prompt-manager';
 import { DiffReviewer } from './diff-reviewer';
+import { ContextCompressor } from './context-compressor';
 
 export function registerCopilotParticipant(
   quotaService: QuotaService,
@@ -152,6 +153,27 @@ export function registerCopilotParticipant(
             return;
           }
 
+          if (request.command === 'compress') {
+            response.progress('Compressing context and token budget...');
+            const compressor = new ContextCompressor();
+            const signaturesOnly = request.prompt?.includes('signatures') ?? false;
+            const res = await compressor.compressActiveEditor({ signaturesOnly });
+
+            if (!res) {
+              response.markdown('❌ No active text editor found to compress context from.\n');
+              return;
+            }
+
+            response.markdown('### 🗜️ Context Compressed\n\n');
+            response.markdown(`- **Original Tokens:** ~${res.originalEstimatedTokens}\n`);
+            response.markdown(`- **Compressed Tokens:** ~${res.compressedEstimatedTokens}\n`);
+            response.markdown(`- **Token Budget Saved:** **${res.savingsPercentage}%**\n\n`);
+            response.markdown('```typescript\n');
+            response.markdown(`${res.compressedText}\n`);
+            response.markdown('```\n');
+            return;
+          }
+
           // Default handler
           response.markdown('### 🤖 Copilot+ Assistant\n\n');
           response.markdown('I am your Copilot+ assistant! Here is how I can help you:\n\n');
@@ -161,6 +183,7 @@ export function registerCopilotParticipant(
           response.markdown('- `@copilotPlus /audit` — Audit workspace prompt context, instructions, and token efficiency.\n');
           response.markdown('- `@copilotPlus /optimize [prompt]` — Optimize a raw prompt into a structured, stack-aware Copilot prompt.\n');
           response.markdown('- `@copilotPlus /review` — Perform automated security & quality code review on workspace Git diff.\n');
+          response.markdown('- `@copilotPlus /compress` — Compress active file context to save token budget.\n');
         }
       );
 
