@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
-import { GetQuotaTool, RecommendModelTool, AuditContextTool, OptimizePromptTool, ReviewChangesTool } from './copilot-tools';
+import { GetQuotaTool, RecommendModelTool, AuditContextTool, OptimizePromptTool, ReviewChangesTool, ConvertRulesTool } from './copilot-tools';
 import { QuotaService } from './quota-service';
 import { RequestTracker } from './request-tracker';
 import { ContextAuditor } from './context-auditor';
@@ -158,6 +158,28 @@ describe('Copilot Tools', () => {
       expect(parsed.workspacePath).toBe('/mock');
       expect(parsed.summaryMarkdown).toBe('No changes');
       expect(mockDiffReviewer.getWorkspaceDiff).toHaveBeenCalledWith(undefined, true);
+    });
+  });
+
+  describe('ConvertRulesTool', () => {
+    it('should convert rules and return JSON response', async () => {
+      const mockSyncManager = {
+        convertWorkspaceRules: vi.fn().mockResolvedValue({
+          convertedFiles: ['.cursorrules'],
+          totalRulesImported: 1,
+          targetUri: { fsPath: '/mock/.github/copilot-instructions.md' },
+          instructionsContent: 'Converted'
+        })
+      };
+
+      const tool = new ConvertRulesTool(mockSyncManager as never);
+      const result = await tool.invoke();
+
+      expect(result.content).toHaveLength(1);
+      const part = result.content[0] as { value: string };
+      const parsed = JSON.parse(part.value);
+      expect(parsed.totalRulesImported).toBe(1);
+      expect(parsed.convertedFiles).toContain('.cursorrules');
     });
   });
 });

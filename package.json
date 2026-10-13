@@ -105,6 +105,12 @@
         "title": "Compress Context",
         "category": "Copilot+",
         "icon": "$(zap)"
+      },
+      {
+        "command": "copilotPlus.convertRules",
+        "title": "Convert & Sync Rules (.cursorrules, AGENTS.md)",
+        "category": "Copilot+",
+        "icon": "$(sync)"
       }
     ],
     "viewsContainers": {
@@ -169,6 +175,11 @@
         },
         {
           "command": "copilotPlus.auditContext",
+          "when": "view == copilotPlus.prompts",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.convertRules",
           "when": "view == copilotPlus.prompts",
           "group": "navigation"
         },
@@ -302,6 +313,16 @@
             }
           }
         }
+      },
+      {
+        "id": "copilotPlus_convertRules",
+        "name": "convert_ai_rules",
+        "displayName": "Convert External AI Rules to Copilot Instructions",
+        "modelDescription": "Converts and synchronizes .cursorrules, .windsurfrules, .clinerules, and AGENTS.md into workspace .github/copilot-instructions.md.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
       }
     ],
     "chatParticipants": [
@@ -337,6 +358,10 @@
           {
             "name": "compress",
             "description": "Compress code or active document to save Copilot token budget"
+          },
+          {
+            "name": "convert",
+            "description": "Convert & sync .cursorrules, .windsurfrules, AGENTS.md into copilot-instructions.md"
           }
         ]
       }

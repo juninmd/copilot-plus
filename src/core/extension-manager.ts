@@ -18,6 +18,7 @@ import { registerCopilotParticipant } from './copilot-participant';
 import { ContextAuditor } from './context-auditor';
 import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
+import { RuleSyncManager } from './rule-sync-manager';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -184,6 +185,20 @@ export class ExtensionManager implements vscode.Disposable {
           }
         } else if (action === 'Create Prompt Template') {
           await vscode.commands.executeCommand('copilotPlus.createPromptTemplate');
+        }
+      }),
+      vscode.commands.registerCommand('copilotPlus.convertRules', async () => {
+        const syncManager = new RuleSyncManager();
+        try {
+          const res = await syncManager.convertWorkspaceRules();
+          this.promptsExplorer.refresh();
+          const doc = await vscode.workspace.openTextDocument(res.targetUri);
+          await vscode.window.showTextDocument(doc);
+          vscode.window.showInformationMessage(
+            `Successfully converted ${res.totalRulesImported} external rule file(s) into .github/copilot-instructions.md!`
+          );
+        } catch (err) {
+          vscode.window.showErrorMessage(`Failed to convert rules: ${String(err)}`);
         }
       }),
       vscode.commands.registerCommand('copilotPlus.generateInstructions', async () => {
