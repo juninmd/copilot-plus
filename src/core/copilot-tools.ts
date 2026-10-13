@@ -6,6 +6,24 @@ import { ContextAuditor } from './context-auditor';
 import { PromptManager } from './prompt-manager';
 import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
+import { RuleSyncManager } from './rule-sync-manager';
+
+export class ConvertRulesTool implements vscode.LanguageModelTool<Record<string, unknown>> {
+  constructor(private readonly ruleSyncManager: RuleSyncManager = new RuleSyncManager()) {}
+
+  public async invoke(): Promise<vscode.LanguageModelToolResult> {
+    try {
+      const result = await this.ruleSyncManager.convertWorkspaceRules();
+      return new vscode.LanguageModelToolResult([
+        new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))
+      ]);
+    } catch (err) {
+      return new vscode.LanguageModelToolResult([
+        new vscode.LanguageModelTextPart(JSON.stringify({ error: String(err) }, null, 2))
+      ]);
+    }
+  }
+}
 
 export interface CompressContextToolInput {
   code?: string;
@@ -191,7 +209,8 @@ export function registerCopilotTools(
         vscode.lm.registerTool('copilotPlus_auditContext', new AuditContextTool(auditor)),
         vscode.lm.registerTool('copilotPlus_optimizePrompt', new OptimizePromptTool(promptManager)),
         vscode.lm.registerTool('copilotPlus_reviewChanges', new ReviewChangesTool(new DiffReviewer())),
-        vscode.lm.registerTool('copilotPlus_compressContext', new CompressContextTool(new ContextCompressor()))
+        vscode.lm.registerTool('copilotPlus_compressContext', new CompressContextTool(new ContextCompressor())),
+        vscode.lm.registerTool('copilotPlus_convertRules', new ConvertRulesTool(new RuleSyncManager()))
       );
     }
   } catch {

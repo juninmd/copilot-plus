@@ -9,6 +9,7 @@ import { ContextAuditor } from './context-auditor';
 import { PromptManager } from './prompt-manager';
 import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
+import { RuleSyncManager } from './rule-sync-manager';
 
 export function registerCopilotParticipant(
   quotaService: QuotaService,
@@ -174,6 +175,21 @@ export function registerCopilotParticipant(
             return;
           }
 
+          if (request.command === 'convert') {
+            response.progress('Scanning and converting workspace AI rule files...');
+            const syncManager = new RuleSyncManager();
+            try {
+              const res = await syncManager.convertWorkspaceRules();
+              response.markdown('### 🔄 External AI Rules Converted & Synchronized\n\n');
+              response.markdown(`- **Imported Rule Sources (${res.totalRulesImported}):** ${res.convertedFiles.map(f => `\`${f}\``).join(', ')}\n`);
+              response.markdown(`- **Target File:** \`.github/copilot-instructions.md\`\n\n`);
+              response.markdown('Successfully merged all external rules into workspace GitHub Copilot instructions!\n');
+            } catch (err) {
+              response.markdown(`❌ **Error converting rules:** ${String(err)}\n`);
+            }
+            return;
+          }
+
           // Default handler
           response.markdown('### 🤖 Copilot+ Assistant\n\n');
           response.markdown('I am your Copilot+ assistant! Here is how I can help you:\n\n');
@@ -184,6 +200,7 @@ export function registerCopilotParticipant(
           response.markdown('- `@copilotPlus /optimize [prompt]` — Optimize a raw prompt into a structured, stack-aware Copilot prompt.\n');
           response.markdown('- `@copilotPlus /review` — Perform automated security & quality code review on workspace Git diff.\n');
           response.markdown('- `@copilotPlus /compress` — Compress active file context to save token budget.\n');
+          response.markdown('- `@copilotPlus /convert` — Convert & sync .cursorrules, .windsurfrules, AGENTS.md into copilot-instructions.md.\n');
         }
       );
 
