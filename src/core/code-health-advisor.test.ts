@@ -34,16 +34,16 @@ describe('CodeHealthAdvisor', () => {
     expect(report.smells.length).toBe(0);
   });
 
-  it('should detect secrets, eval usage, and explicit any types', () => {
-    const fakeKey = ['sec', 'ret_1234567890'].join('');
-    const dirtyCode = `
-      const api_key = "${fakeKey}";
-      function doStuff(data: any): any {
-        eval(data);
-        if (data) { if (data) { if (data) { if (data) {} } } }
-        try {} catch (e) {}
-      }
-    `;
+   it('should detect secrets, eval usage, and explicit any types', () => {
+     const fakeKey = 'secret_ABC123';
+     const dirtyCode = `
+       const api_key = "${fakeKey}";
+       function doStuff(data: any): any {
+         eval(data);
+         if (data) { if (data) { if (data) { if (data) {} } } }
+         try {} catch (e) {}
+       }
+     `;
 
     const report = advisor.analyzeCode(dirtyCode, 'src/dirty.ts');
 
