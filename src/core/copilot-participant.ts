@@ -10,6 +10,8 @@ import { PromptManager } from './prompt-manager';
 import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
+import { ArchitectureIndexer } from './architecture-indexer';
+import { CodeHealthAdvisor } from './code-health-advisor';
 
 export function registerCopilotParticipant(
   quotaService: QuotaService,
@@ -190,6 +192,29 @@ export function registerCopilotParticipant(
             return;
           }
 
+          if (request.command === 'architecture') {
+            response.progress('Indexing workspace architecture and entry points...');
+            const indexer = new ArchitectureIndexer();
+            const summary = await indexer.scanWorkspace();
+
+            response.markdown(`${summary.markdownSummary}\n`);
+            return;
+          }
+
+          if (request.command === 'health') {
+            response.progress('Analyzing active code health and complexity hotspots...');
+            const advisor = new CodeHealthAdvisor();
+            const report = await advisor.analyzeActiveEditor();
+
+            if (!report) {
+              response.markdown('❌ No active editor open to analyze code health.\n');
+              return;
+            }
+
+            response.markdown(`${report.markdownSummary}\n`);
+            return;
+          }
+
           // Default handler
           response.markdown('### 🤖 Copilot+ Assistant\n\n');
           response.markdown('I am your Copilot+ assistant! Here is how I can help you:\n\n');
@@ -201,6 +226,8 @@ export function registerCopilotParticipant(
           response.markdown('- `@copilotPlus /review` — Perform automated security & quality code review on workspace Git diff.\n');
           response.markdown('- `@copilotPlus /compress` — Compress active file context to save token budget.\n');
           response.markdown('- `@copilotPlus /convert` — Convert & sync .cursorrules, .windsurfrules, AGENTS.md into copilot-instructions.md.\n');
+          response.markdown('- `@copilotPlus /architecture` — View or generate workspace architecture context index.\n');
+          response.markdown('- `@copilotPlus /health` — Analyze active file for code smells, complexity, and refactoring tips.\n');
         }
       );
 

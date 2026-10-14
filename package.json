@@ -77,6 +77,18 @@
         "icon": "$(file-text)"
       },
       {
+        "command": "copilotPlus.generateArchitecture",
+        "title": "Generate Workspace Architecture Index",
+        "category": "Copilot+",
+        "icon": "$(organization)"
+      },
+      {
+        "command": "copilotPlus.analyzeCodeHealth",
+        "title": "Analyze Code Health & Refactoring Hotspots",
+        "category": "Copilot+",
+        "icon": "$(heart)"
+      },
+      {
         "command": "copilotPlus.createPromptTemplate",
         "title": "Create Custom Prompt Template",
         "category": "Copilot+",
@@ -170,6 +182,16 @@
         },
         {
           "command": "copilotPlus.compressContext",
+          "when": "view == copilotPlus.prompts || view == copilotPlus.agents",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.generateArchitecture",
+          "when": "view == copilotPlus.prompts",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.analyzeCodeHealth",
           "when": "view == copilotPlus.prompts || view == copilotPlus.agents",
           "group": "navigation"
         },
@@ -323,6 +345,26 @@
           "type": "object",
           "properties": {}
         }
+      },
+      {
+        "id": "copilotPlus_getArchitectureSummary",
+        "name": "get_workspace_architecture",
+        "displayName": "Get Workspace Architecture Summary",
+        "modelDescription": "Analyzes project structure, tech stack, dependencies, and key entry points into a high-level architecture overview.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "id": "copilotPlus_analyzeCodeHealth",
+        "name": "analyze_code_health",
+        "displayName": "Analyze Active Code Health",
+        "modelDescription": "Scans code for cyclomatic complexity, code smells, type safety issues, hardcoded credentials, and refactoring hotspots.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
       }
     ],
     "chatParticipants": [
@@ -362,6 +404,14 @@
           {
             "name": "convert",
             "description": "Convert & sync .cursorrules, .windsurfrules, AGENTS.md into copilot-instructions.md"
+          },
+          {
+            "name": "architecture",
+            "description": "Generate or view workspace architecture context summary"
+          },
+          {
+            "name": "health",
+            "description": "Analyze active file for code smells, complexity, and refactoring tips"
           }
         ]
       }

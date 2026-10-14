@@ -7,6 +7,47 @@ import { PromptManager } from './prompt-manager';
 import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
+import { ArchitectureIndexer } from './architecture-indexer';
+import { CodeHealthAdvisor } from './code-health-advisor';
+
+export class GetArchitectureSummaryTool implements vscode.LanguageModelTool<Record<string, unknown>> {
+  constructor(private readonly indexer: ArchitectureIndexer = new ArchitectureIndexer()) {}
+
+  public async invoke(): Promise<vscode.LanguageModelToolResult> {
+    try {
+      const summary = await this.indexer.scanWorkspace();
+      return new vscode.LanguageModelToolResult([
+        new vscode.LanguageModelTextPart(JSON.stringify(summary, null, 2))
+      ]);
+    } catch (err) {
+      return new vscode.LanguageModelToolResult([
+        new vscode.LanguageModelTextPart(JSON.stringify({ error: String(err) }, null, 2))
+      ]);
+    }
+  }
+}
+
+export class AnalyzeCodeHealthTool implements vscode.LanguageModelTool<Record<string, unknown>> {
+  constructor(private readonly advisor: CodeHealthAdvisor = new CodeHealthAdvisor()) {}
+
+  public async invoke(): Promise<vscode.LanguageModelToolResult> {
+    try {
+      const report = await this.advisor.analyzeActiveEditor();
+      if (!report) {
+        return new vscode.LanguageModelToolResult([
+          new vscode.LanguageModelTextPart(JSON.stringify({ error: 'No active editor found to analyze.' }))
+        ]);
+      }
+      return new vscode.LanguageModelToolResult([
+        new vscode.LanguageModelTextPart(JSON.stringify(report, null, 2))
+      ]);
+    } catch (err) {
+      return new vscode.LanguageModelToolResult([
+        new vscode.LanguageModelTextPart(JSON.stringify({ error: String(err) }, null, 2))
+      ]);
+    }
+  }
+}
 
 export class ConvertRulesTool implements vscode.LanguageModelTool<Record<string, unknown>> {
   constructor(private readonly ruleSyncManager: RuleSyncManager = new RuleSyncManager()) {}
@@ -203,6 +244,9 @@ export function registerCopilotTools(
     if (typeof vscode.lm?.registerTool === 'function') {
       const auditor = new ContextAuditor();
       const promptManager = new PromptManager();
+      const indexer = new ArchitectureIndexer();
+      const advisor = new CodeHealthAdvisor();
+
       disposables.push(
         vscode.lm.registerTool('copilotPlus_getQuota', new GetQuotaTool(quotaService, tracker)),
         vscode.lm.registerTool('copilotPlus_recommendModel', new RecommendModelTool()),
@@ -210,7 +254,9 @@ export function registerCopilotTools(
         vscode.lm.registerTool('copilotPlus_optimizePrompt', new OptimizePromptTool(promptManager)),
         vscode.lm.registerTool('copilotPlus_reviewChanges', new ReviewChangesTool(new DiffReviewer())),
         vscode.lm.registerTool('copilotPlus_compressContext', new CompressContextTool(new ContextCompressor())),
-        vscode.lm.registerTool('copilotPlus_convertRules', new ConvertRulesTool(new RuleSyncManager()))
+        vscode.lm.registerTool('copilotPlus_convertRules', new ConvertRulesTool(new RuleSyncManager())),
+        vscode.lm.registerTool('copilotPlus_getArchitectureSummary', new GetArchitectureSummaryTool(indexer)),
+        vscode.lm.registerTool('copilotPlus_analyzeCodeHealth', new AnalyzeCodeHealthTool(advisor))
       );
     }
   } catch {

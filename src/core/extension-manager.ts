@@ -19,6 +19,8 @@ import { ContextAuditor } from './context-auditor';
 import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
+import { ArchitectureIndexer } from './architecture-indexer';
+import { CodeHealthAdvisor } from './code-health-advisor';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -163,6 +165,36 @@ export class ExtensionManager implements vscode.Disposable {
         ).then((action) => {
           if (action === 'Copy Compressed Code') {
             void vscode.env.clipboard.writeText(res.compressedText);
+          }
+        });
+      }),
+      vscode.commands.registerCommand('copilotPlus.generateArchitecture', async () => {
+        const indexer = new ArchitectureIndexer();
+        try {
+          const uri = await indexer.generateAndSaveArchitectureFile();
+          if (uri) {
+            this.promptsExplorer.refresh();
+            const doc = await vscode.workspace.openTextDocument(uri);
+            await vscode.window.showTextDocument(doc);
+            vscode.window.showInformationMessage('Workspace architecture context file generated successfully!');
+          }
+        } catch (err) {
+          vscode.window.showErrorMessage(`Failed to generate architecture context: ${String(err)}`);
+        }
+      }),
+      vscode.commands.registerCommand('copilotPlus.analyzeCodeHealth', async () => {
+        const advisor = new CodeHealthAdvisor();
+        const report = await advisor.analyzeActiveEditor();
+        if (!report) {
+          vscode.window.showWarningMessage('No active text editor open to analyze.');
+          return;
+        }
+        vscode.window.showInformationMessage(
+          `Code Health Score: ${report.score}/100 (Grade ${report.rating}). Detected ${report.smells.length} smell(s).`,
+          'Open Chat'
+        ).then((action) => {
+          if (action === 'Open Chat') {
+            void vscode.commands.executeCommand('workbench.action.chat.open', '@copilotPlus /health');
           }
         });
       }),
