@@ -19,6 +19,7 @@ import { ContextAuditor } from './context-auditor';
 import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
+import { ArchitectureIndexer } from './architecture-indexer';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -229,6 +230,18 @@ export class ExtensionManager implements vscode.Disposable {
         } catch (err) {
           vscode.window.showErrorMessage(`Failed to create prompt template: ${String(err)}`);
         }
+      }),
+      vscode.commands.registerCommand('copilotPlus.indexArchitecture', async () => {
+        const indexer = new ArchitectureIndexer();
+        const arch = await indexer.analyzeWorkspace();
+        vscode.window.showInformationMessage(
+          `Workspace indexed! Found ${arch.totalFiles} files across ${arch.modules.length} modules (${arch.entrypoints.length} entrypoints).`,
+          'Open Chat'
+        ).then((action) => {
+          if (action === 'Open Chat') {
+            void vscode.commands.executeCommand('workbench.action.chat.open', '@copilotPlus /architecture');
+          }
+        });
       }),
       vscode.commands.registerCommand('copilotPlus.runPromptTemplate', async (uri?: vscode.Uri) => {
         let templateUri = uri;

@@ -111,6 +111,12 @@
         "title": "Convert & Sync Rules (.cursorrules, AGENTS.md)",
         "category": "Copilot+",
         "icon": "$(sync)"
+      },
+      {
+        "command": "copilotPlus.indexArchitecture",
+        "title": "Index Workspace Architecture",
+        "category": "Copilot+",
+        "icon": "$(structure)"
       }
     ],
     "viewsContainers": {
@@ -323,6 +329,16 @@
           "type": "object",
           "properties": {}
         }
+      },
+      {
+        "id": "copilotPlus_indexArchitecture",
+        "name": "get_workspace_architecture",
+        "displayName": "Workspace Architecture Indexer",
+        "modelDescription": "Indexes workspace entrypoints, key dependencies, module breakdown, and tech stack into structured Markdown context.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
       }
     ],
     "chatParticipants": [
@@ -362,6 +378,10 @@
           {
             "name": "convert",
             "description": "Convert & sync .cursorrules, .windsurfrules, AGENTS.md into copilot-instructions.md"
+          },
+          {
+            "name": "architecture",
+            "description": "Index workspace tech stack, entrypoints, modules, and architecture summary"
           }
         ]
       }
