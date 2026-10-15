@@ -123,6 +123,12 @@
         "title": "Convert & Sync Rules (.cursorrules, AGENTS.md)",
         "category": "Copilot+",
         "icon": "$(sync)"
+      },
+      {
+        "command": "copilotPlus.indexArchitecture",
+        "title": "Index Workspace Architecture",
+        "category": "Copilot+",
+        "icon": "$(structure)"
       }
     ],
     "viewsContainers": {
@@ -284,6 +290,7 @@
         "id": "copilotPlus_optimizePrompt",
         "name": "optimize_copilot_prompt",
         "displayName": "Optimize Copilot Prompt",
+        "displayName": "Optimize Copilot Prompt",
         "modelDescription": "Transforms raw coding requests into highly structured, context-aware Copilot prompts tailored to project tech stack.",
         "inputSchema": {
           "type": "object",
@@ -330,10 +337,8 @@
               "description": "Code content to compress. If omitted, compresses active text editor."
             },
             "signaturesOnly": {
-              "type": "boolean",
-              "description": "Whether to extract only class/function signatures."
+              "packageManager": "pnpm@9.6.0"
             }
-          }
         }
       },
       {

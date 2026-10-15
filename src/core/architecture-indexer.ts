@@ -1,216 +1,211 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+
+export interface ModuleInfo {
+  name: string;
+  relativePath: string;
+  fileCount: number;
+  entrypoints: string[];
+}
 
 export interface ArchitectureSummary {
-  projectName: string;
-  detectedLanguages: string[];
-  entryPoints: string[];
+  workspaceName: string;
+  techStack: string[];
+  totalFiles: number;
+  modules: ModuleInfo[];
   keyDependencies: string[];
-  directoryOverview: string[];
+  entrypoints: string[];
   markdownSummary: string;
-  outputPath: string;
 }
 
 export class ArchitectureIndexer {
-  private static readonly EXCLUDED_FOLDERS = [
-    'node_modules',
-    '.git',
-    'dist',
-    'build',
-    'out',
-    'target',
-    'coverage',
-    '.vscode-test'
-  ];
-
-  public async scanWorkspace(): Promise<ArchitectureSummary> {
+  public async analyzeWorkspace(): Promise<ArchitectureSummary> {
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      return {
-        projectName: 'Unknown Workspace',
-        detectedLanguages: [],
-        entryPoints: [],
-        keyDependencies: [],
-        directoryOverview: [],
-        markdownSummary: 'No open workspace folder found.',
-        outputPath: '.github/copilot-architecture.md'
-      };
-    }
+    const workspaceName =
+      workspaceFolders && workspaceFolders.length > 0
+        ? workspaceFolders[0].name
+        : 'Workspace';
 
-    const rootUri = workspaceFolders[0].uri;
-    const projectName = workspaceFolders[0].name;
+    const files = await vscode.workspace.findFiles(
+      '**/*.{ts,js,jsx,tsx,py,go,rs,java,kt,dart,c,cpp,cs}',
+      '**/node_modules/**'
+    );
 
-    const entryPoints: string[] = [];
-    const detectedLanguages = new Set<string>();
-    const keyDependencies: string[] = [];
-    const directoryOverview: string[] = [];
+    const relativePaths = files.map((f) => vscode.workspace.asRelativePath(f, false));
 
-    try {
-      // Scan root configuration files
-      const manifestUri = vscode.Uri.joinPath(rootUri, 'package.json');
-      try {
-        const bytes = await vscode.workspace.fs.readFile(manifestUri);
-        const pkgJson = JSON.parse(new TextDecoder().decode(bytes));
-        detectedLanguages.add('TypeScript/JavaScript');
+    const techStack = await this.detectTechStack();
+    const keyDependencies = await this.detectDependencies();
+    const entrypoints = this.detectEntrypoints(relativePaths);
+    const modules = this.detectModules(relativePaths, entrypoints);
 
-        const deps = { ...pkgJson.dependencies, ...pkgJson.devDependencies };
-        if (deps) {
-          const topDeps = Object.keys(deps).slice(0, 15);
-          keyDependencies.push(...topDeps);
-        }
-      } catch {
-        // package.json does not exist
-      }
-
-      // Check Python
-      try {
-        const pyproject = vscode.Uri.joinPath(rootUri, 'pyproject.toml');
-        await vscode.workspace.fs.stat(pyproject);
-        detectedLanguages.add('Python');
-      } catch {
-        // ignore
-      }
-
-      // Check Go
-      try {
-        const goMod = vscode.Uri.joinPath(rootUri, 'go.mod');
-        await vscode.workspace.fs.stat(goMod);
-        detectedLanguages.add('Go');
-      } catch {
-        // ignore
-      }
-
-      // Check Rust
-      try {
-        const cargo = vscode.Uri.joinPath(rootUri, 'Cargo.toml');
-        await vscode.workspace.fs.stat(cargo);
-        detectedLanguages.add('Rust');
-      } catch {
-        // ignore
-      }
-
-      // Scan directory entries
-      const entries = await vscode.workspace.fs.readDirectory(rootUri);
-
-      for (const [name, type] of entries) {
-        if (ArchitectureIndexer.EXCLUDED_FOLDERS.includes(name) || name.startsWith('.')) {
-          continue;
-        }
-
-        if (type === vscode.FileType.Directory) {
-          directoryOverview.push(`📁 \`${name}/\``);
-          try {
-            const subEntries = await vscode.workspace.fs.readDirectory(vscode.Uri.joinPath(rootUri, name));
-            for (const [subName, subType] of subEntries.slice(0, 8)) {
-              if (!ArchitectureIndexer.EXCLUDED_FOLDERS.includes(subName) && !subName.startsWith('.')) {
-                const subIcon = subType === vscode.FileType.Directory ? '📁' : '📄';
-                directoryOverview.push(`  └─ ${subIcon} \`${subName}\``);
-              }
-            }
-          } catch {
-            // ignore subfolder read error
-          }
-        } else {
-          directoryOverview.push(`📄 \`${name}\``);
-        }
-
-        // Common Entry points check
-        if (['src/extension.ts', 'src/index.ts', 'src/main.ts', 'app.py', 'main.py', 'main.go', 'src/main.rs'].includes(name)) {
-          entryPoints.push(name);
-        }
-      }
-
-      // Scan src directory for entry points if present
-      try {
-        const srcUri = vscode.Uri.joinPath(rootUri, 'src');
-        const srcEntries = await vscode.workspace.fs.readDirectory(srcUri);
-        for (const [srcName] of srcEntries) {
-          if (['extension.ts', 'index.ts', 'main.ts', 'app.ts', 'index.js', 'main.js'].includes(srcName)) {
-            entryPoints.push(`src/${srcName}`);
-            detectedLanguages.add('TypeScript/JavaScript');
-          }
-        }
-      } catch {
-        // no src directory
-      }
-
-    } catch (err) {
-      // General filesystem scan warning
-    }
-
-    const langList = Array.from(detectedLanguages);
-    if (langList.length === 0) langList.push('Polyglot / Generic');
-
-    const markdownSummary = this.buildMarkdown(
-      projectName,
-      langList,
-      entryPoints,
+    const markdownSummary = this.generateMarkdownSummary(
+      workspaceName,
+      techStack,
+      files.length,
+      modules,
       keyDependencies,
-      directoryOverview
+      entrypoints
     );
 
     return {
-      projectName,
-      detectedLanguages: langList,
-      entryPoints,
+      workspaceName,
+      techStack,
+      totalFiles: files.length,
+      modules,
       keyDependencies,
-      directoryOverview,
-      markdownSummary,
-      outputPath: '.github/copilot-architecture.md'
+      entrypoints,
+      markdownSummary
     };
   }
 
-  public async generateAndSaveArchitectureFile(): Promise<vscode.Uri | undefined> {
-    const summary = await this.scanWorkspace();
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) return undefined;
+  public detectEntrypoints(paths: string[]): string[] {
+    const entryPatterns = [
+      /index\.(ts|js|jsx|tsx)$/i,
+      /main\.(ts|js|py|go|rs|java|kt|dart)$/i,
+      /app\.(ts|js|py)$/i,
+      /extension\.(ts|js)$/i,
+      /server\.(ts|js|py)$/i,
+      /manage\.py$/i
+    ];
 
-    const targetUri = vscode.Uri.joinPath(workspaceFolders[0].uri, summary.outputPath);
-    const content = new TextEncoder().encode(summary.markdownSummary);
-
-    // Ensure .github folder exists
-    const githubFolderUri = vscode.Uri.joinPath(workspaceFolders[0].uri, '.github');
-    try {
-      await vscode.workspace.fs.createDirectory(githubFolderUri);
-    } catch {
-      // directory might exist
-    }
-
-    await vscode.workspace.fs.writeFile(targetUri, content);
-    return targetUri;
+    return paths
+      .filter((p) => entryPatterns.some((pattern) => pattern.test(p)))
+      .sort();
   }
 
-  private buildMarkdown(
-    projectName: string,
-    languages: string[],
-    entryPoints: string[],
-    dependencies: string[],
-    directoryOverview: string[]
+  public detectModules(paths: string[], entrypoints: string[]): ModuleInfo[] {
+    const moduleMap = new Map<string, { count: number; entries: string[] }>();
+
+    for (const p of paths) {
+      const parts = p.split('/');
+      const topDir = parts.length > 1 ? parts[0] : 'root';
+
+      if (!moduleMap.has(topDir)) {
+        moduleMap.set(topDir, { count: 0, entries: [] });
+      }
+
+      const mod = moduleMap.get(topDir)!;
+      mod.count += 1;
+
+      if (entrypoints.includes(p)) {
+        mod.entries.push(p);
+      }
+    }
+
+    const modules: ModuleInfo[] = [];
+    for (const [name, data] of moduleMap.entries()) {
+      modules.push({
+        name,
+        relativePath: name === 'root' ? '.' : name,
+        fileCount: data.count,
+        entrypoints: data.entries
+      });
+    }
+
+    return modules.sort((a, b) => b.fileCount - a.fileCount);
+  }
+
+  public async detectTechStack(): Promise<string[]> {
+    const stack: string[] = [];
+
+    const packageJsonPaths = await vscode.workspace.findFiles(
+      '**/package.json',
+      '**/node_modules/**'
+    );
+    if (packageJsonPaths.length > 0) {
+      stack.push('Node.js/JavaScript');
+      try {
+        const bytes = await vscode.workspace.fs.readFile(packageJsonPaths[0]);
+        const content = new TextDecoder().decode(bytes);
+        const pkg = JSON.parse(content);
+        const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+
+        if (allDeps.typescript) stack.push('TypeScript');
+        if (allDeps.react || allDeps['react-dom']) stack.push('React');
+        if (allDeps.vue) stack.push('Vue');
+        if (allDeps['@nestjs/core']) stack.push('NestJS');
+        if (allDeps.express) stack.push('Express');
+        if (allDeps.vscode || allDeps['@types/vscode']) stack.push('VS Code Extension API');
+      } catch {
+        // ignore parse error
+      }
+    }
+
+    const pyPaths = await vscode.workspace.findFiles('**/*.py', '**/node_modules/**');
+    if (pyPaths.length > 0) stack.push('Python');
+
+    const goPaths = await vscode.workspace.findFiles('**/go.mod', '**/node_modules/**');
+    if (goPaths.length > 0) stack.push('Go');
+
+    const rsPaths = await vscode.workspace.findFiles('**/Cargo.toml', '**/node_modules/**');
+    if (rsPaths.length > 0) stack.push('Rust');
+
+    return Array.from(new Set(stack));
+  }
+
+  public async detectDependencies(): Promise<string[]> {
+    const deps: string[] = [];
+
+    const packageJsonPaths = await vscode.workspace.findFiles(
+      '**/package.json',
+      '**/node_modules/**'
+    );
+    if (packageJsonPaths.length > 0) {
+      try {
+        const bytes = await vscode.workspace.fs.readFile(packageJsonPaths[0]);
+        const content = new TextDecoder().decode(bytes);
+        const pkg = JSON.parse(content);
+
+        if (pkg.dependencies) {
+          deps.push(...Object.keys(pkg.dependencies));
+        }
+      } catch {
+        // ignore parse error
+      }
+    }
+
+    return deps.slice(0, 15);
+  }
+
+  public generateMarkdownSummary(
+    workspaceName: string,
+    techStack: string[],
+    totalFiles: number,
+    modules: ModuleInfo[],
+    keyDependencies: string[],
+    entrypoints: string[]
   ): string {
-    return [
-      `# 🏗️ Workspace Architecture Context: ${projectName}`,
-      ``,
-      `> Auto-generated by Copilot+ Architecture Indexer. This document provides high-level architecture context for AI models & Copilot Agents.`,
-      ``,
-      `## 🧰 Tech Stack & Languages`,
-      languages.map((l) => `- **${l}**`).join('\n') || '- Generic',
-      ``,
-      `## 🚀 Key Entry Points`,
-      entryPoints.length > 0
-        ? entryPoints.map((e) => `- \`${e}\``).join('\n')
-        : '- Auto-detected from directory structure during AI indexer scan.',
-      ``,
-      `## 📦 Primary Dependencies`,
-      dependencies.length > 0
-        ? dependencies.map((d) => `- \`${d}\``).join('\n')
-        : '- No primary manifest dependencies registered.',
-      ``,
-      `## 📁 Directory Structure Summary`,
-      directoryOverview.length > 0
-        ? directoryOverview.join('\n')
-        : '- Root directory contains project files.',
-      ``,
-      `---`,
-      `*Updated by Copilot+ Extension*`
-    ].join('\n');
+    const lines: string[] = [];
+
+    lines.push(`### 🏗️ Workspace Architecture Index: ${workspaceName}`);
+    lines.push(``);
+    lines.push(
+      `- **Tech Stack:** ${techStack.length > 0 ? techStack.join(', ') : 'Unknown'}`
+    );
+    lines.push(`- **Total Source Files:** ${totalFiles}`);
+    lines.push(`- **Entrypoints Detected:** ${entrypoints.length}`);
+    lines.push(``);
+
+    if (entrypoints.length > 0) {
+      lines.push(`#### 🚀 Entrypoints`);
+      for (const entry of entrypoints) {
+        lines.push(`- \`${entry}\``);
+      }
+      lines.push(``);
+    }
+
+    lines.push(`#### 📦 Modules Breakdown`);
+    for (const mod of modules) {
+      lines.push(`- **\`${mod.name}\`**: ${mod.fileCount} file(s)`);
+    }
+    lines.push(``);
+
+    if (keyDependencies.length > 0) {
+      lines.push(`#### 🔗 Core Dependencies`);
+      lines.push(`\`${keyDependencies.join('`, `')}\``);
+      lines.push(``);
+    }
+
+    return lines.join('\n');
   }
 }
