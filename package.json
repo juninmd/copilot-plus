@@ -84,9 +84,9 @@
       },
       {
         "command": "copilotPlus.analyzeCodeHealth",
-        "title": "Analyze Code Health & Refactoring Hotspots",
+        "title": "Analyze Code Health & Technical Debt",
         "category": "Copilot+",
-        "icon": "$(heart)"
+        "icon": "$(pulse)"
       },
       {
         "command": "copilotPlus.createPromptTemplate",
@@ -129,6 +129,12 @@
         "title": "Index Workspace Architecture",
         "category": "Copilot+",
         "icon": "$(structure)"
+      },
+      {
+        "command": "copilotPlus.analyzeCodeHealth",
+        "title": "Analyze Code Health & Technical Debt",
+        "category": "Copilot+",
+        "icon": "$(pulse)"
       }
     ],
     "viewsContainers": {
@@ -290,7 +296,6 @@
         "id": "copilotPlus_optimizePrompt",
         "name": "optimize_copilot_prompt",
         "displayName": "Optimize Copilot Prompt",
-        "displayName": "Optimize Copilot Prompt",
         "modelDescription": "Transforms raw coding requests into highly structured, context-aware Copilot prompts tailored to project tech stack.",
         "inputSchema": {
           "type": "object",
@@ -337,8 +342,13 @@
               "description": "Code content to compress. If omitted, compresses active text editor."
             },
             "signaturesOnly": {
-              "packageManager": "pnpm@9.6.0"
+              "type": "boolean",
+              "description": "Extract only function signatures."
             }
+          },
+          "required": [
+            "code"
+          ]
         }
       },
       {
@@ -364,11 +374,20 @@
       {
         "id": "copilotPlus_analyzeCodeHealth",
         "name": "analyze_code_health",
-        "displayName": "Analyze Active Code Health",
-        "modelDescription": "Scans code for cyclomatic complexity, code smells, type safety issues, hardcoded credentials, and refactoring hotspots.",
+        "displayName": "Analyze Code Health & Technical Debt",
+        "modelDescription": "Analyzes code or active document for technical debt markers (TODO, FIXME, any, @ts-ignore), line count complexity, and test coverage.",
         "inputSchema": {
           "type": "object",
-          "properties": {}
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Code content to analyze. If omitted, analyzes active text editor."
+            },
+            "fileName": {
+              "type": "string",
+              "description": "File name or relative path."
+            }
+          }
         }
       }
     ],
@@ -412,11 +431,11 @@
           },
           {
             "name": "architecture",
-            "description": "Generate or view workspace architecture context summary"
+            "description": "Index workspace tech stack, entrypoints, modules, and architecture summary"
           },
           {
             "name": "health",
-            "description": "Analyze active file for code smells, complexity, and refactoring tips"
+            "description": "Analyze active file code health, technical debt markers, and complexity"
           }
         ]
       }

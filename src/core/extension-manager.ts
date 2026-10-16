@@ -20,6 +20,7 @@ import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
 import { ArchitectureIndexer } from './architecture-indexer';
+import { CodeHealthAnalyzer } from './code-health-analyzer';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -148,6 +149,22 @@ export class ExtensionManager implements vscode.Disposable {
         ).then((action) => {
           if (action === 'Open Chat') {
             void vscode.commands.executeCommand('workbench.action.chat.open', '@copilotPlus /review');
+          }
+        });
+      }),
+      vscode.commands.registerCommand('copilotPlus.analyzeCodeHealth', async () => {
+        const analyzer = new CodeHealthAnalyzer();
+        const report = await analyzer.analyzeActiveEditor();
+        if (!report) {
+          vscode.window.showWarningMessage('No active editor open to analyze code health.');
+          return;
+        }
+        vscode.window.showInformationMessage(
+          `Code Health: ${report.healthScore}/100 (${report.rating}). Debt markers: ${report.debtMarkers.length}.`,
+          'Open Chat'
+        ).then((action) => {
+          if (action === 'Open Chat') {
+            void vscode.commands.executeCommand('workbench.action.chat.open', '@copilotPlus /health');
           }
         });
       }),

@@ -2,40 +2,34 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as vscode from 'vscode';
 import { ArchitectureIndexer } from './architecture-indexer';
 
-vi.mock('vscode', () => {
-  const mockFs = {
-    readFile: vi.fn(),
-    writeFile: vi.fn(),
-    createDirectory: vi.fn(),
-    readDirectory: vi.fn(),
-    stat: vi.fn()
-  };
-
-  return {
-    workspace: {
-      workspaceFolders: [
-        {
-          uri: { path: '/workspace', fsPath: '/workspace' },
-          name: 'test-project'
-        }
-      ],
-      fs: mockFs,
-      asRelativePath: (uri: { path: string }) => uri.path
-    },
-    Uri: {
-      file: (path: string) => ({ path, fsPath: path }),
-      joinPath: (base: { path: string }, ...paths: string[]) => ({
-        path: `${base.path}/${paths.join('/')}`,
-        fsPath: `${base.path}/${paths.join('/')}`
-      })
-    },
-    FileType: {
-      File: 1,
-      Directory: 2,
-      SymbolicLink: 64
+vi.mock('vscode', () => ({
+  workspace: {
+    workspaceFolders: [
+      {
+        uri: { path: '/workspace', fsPath: '/workspace' },
+        name: 'test-project'
+      }
+    ],
+    findFiles: vi.fn().mockResolvedValue([]),
+    asRelativePath: (pathStr: string): string => pathStr,
+    fs: {
+      readFile: vi.fn(),
+      readDirectory: vi.fn()
     }
-  };
-});
+  },
+  Uri: {
+    file: (path: string) => ({ path, fsPath: path }),
+    joinPath: (base: { path: string }, ...paths: string[]) => ({
+      path: `${base.path}/${paths.join('/')}`,
+      fsPath: `${base.path}/${paths.join('/')}`
+    })
+  },
+  FileType: {
+    File: 1,
+    Directory: 2,
+    SymbolicLink: 64
+  }
+}));
 
 describe('ArchitectureIndexer', () => {
   let indexer: ArchitectureIndexer;
