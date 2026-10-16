@@ -11,6 +11,7 @@ import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
 import { ArchitectureIndexer } from './architecture-indexer';
+import { CodeHealthAnalyzer } from './code-health-analyzer';
 
 export function registerCopilotParticipant(
   quotaService: QuotaService,
@@ -199,6 +200,18 @@ export function registerCopilotParticipant(
             return;
           }
 
+          if (request.command === 'health') {
+            response.progress('Analyzing active document code health & technical debt...');
+            const healthAnalyzer = new CodeHealthAnalyzer();
+            const report = await healthAnalyzer.analyzeActiveEditor();
+            if (!report) {
+              response.markdown('❌ No active text editor found to analyze code health.\n');
+              return;
+            }
+            response.markdown(`${report.summaryMarkdown}\n`);
+            return;
+          }
+
           // Default handler
           response.markdown('### 🤖 Copilot+ Assistant\n\n');
           response.markdown('I am your Copilot+ assistant! Here is how I can help you:\n\n');
@@ -211,6 +224,7 @@ export function registerCopilotParticipant(
           response.markdown('- `@copilotPlus /compress` — Compress active file context to save token budget.\n');
           response.markdown('- `@copilotPlus /convert` — Convert & sync .cursorrules, .windsurfrules, AGENTS.md into copilot-instructions.md.\n');
           response.markdown('- `@copilotPlus /architecture` — Index workspace tech stack, entrypoints, modules, and architecture summary.\n');
+          response.markdown('- `@copilotPlus /health` — Analyze active file code health, technical debt markers, and complexity.\n');
         }
       );
 

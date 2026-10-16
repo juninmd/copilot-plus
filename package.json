@@ -117,6 +117,12 @@
         "title": "Index Workspace Architecture",
         "category": "Copilot+",
         "icon": "$(structure)"
+      },
+      {
+        "command": "copilotPlus.analyzeCodeHealth",
+        "title": "Analyze Code Health & Technical Debt",
+        "category": "Copilot+",
+        "icon": "$(pulse)"
       }
     ],
     "viewsContainers": {
@@ -197,6 +203,11 @@
         {
           "command": "copilotPlus.diagnose",
           "when": "view == copilotPlus.agents",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.analyzeCodeHealth",
+          "when": "view == copilotPlus.prompts || view == copilotPlus.agents",
           "group": "navigation"
         },
         {
@@ -339,6 +350,25 @@
           "type": "object",
           "properties": {}
         }
+      },
+      {
+        "id": "copilotPlus_analyzeCodeHealth",
+        "name": "analyze_code_health",
+        "displayName": "Analyze Code Health & Technical Debt",
+        "modelDescription": "Analyzes code or active document for technical debt markers (TODO, FIXME, any, @ts-ignore), line count complexity, and test coverage.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Code content to analyze. If omitted, analyzes active text editor."
+            },
+            "fileName": {
+              "type": "string",
+              "description": "File name or relative path."
+            }
+          }
+        }
       }
     ],
     "chatParticipants": [
@@ -382,6 +412,10 @@
           {
             "name": "architecture",
             "description": "Index workspace tech stack, entrypoints, modules, and architecture summary"
+          },
+          {
+            "name": "health",
+            "description": "Analyze active file code health, technical debt markers, and complexity"
           }
         ]
       }

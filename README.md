@@ -37,6 +37,13 @@ A TreeView that lists all registered Copilot Chat participants with their **scop
 | `$(folder)` **[workspace]** | Workspace | Extension loaded from workspace folder |
 | `$(tools)` **[local-dev]** | Local dev | Extension in development (`extensionDevelopmentPath`) |
 
+### 🩺 Code Health & Technical Debt Analyzer
+
+Analyze active files for technical debt markers (`TODO`, `FIXME`, `HACK`, `@ts-ignore`, `any`), indentation depth, module size complexity, and unit test file pairing. Available via:
+- `@copilotPlus /health` in Copilot Chat
+- `copilotPlus_analyzeCodeHealth` Language Model Tool
+- `Copilot+: Analyze Code Health & Technical Debt` command
+
 ### 💰 Premium Request Cost Tracking
 
 Every model uses a different number of premium requests per call (April 2026):

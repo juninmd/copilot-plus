@@ -5,7 +5,7 @@ vi.mock('vscode', () => ({
   workspace: {
     workspaceFolders: [{ name: 'TestWorkspace', uri: { fsPath: '/test' } }],
     findFiles: vi.fn().mockResolvedValue([]),
-    asRelativePath: (pathStr: string) => pathStr,
+    asRelativePath: (pathStr: string): string => pathStr,
     fs: {
       readFile: vi.fn()
     }

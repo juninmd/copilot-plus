@@ -8,6 +8,37 @@ import { DiffReviewer } from './diff-reviewer';
 import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
 import { ArchitectureIndexer } from './architecture-indexer';
+import { CodeHealthAnalyzer } from './code-health-analyzer';
+
+export interface AnalyzeCodeHealthToolInput {
+  code?: string;
+  fileName?: string;
+}
+
+export class AnalyzeCodeHealthTool implements vscode.LanguageModelTool<AnalyzeCodeHealthToolInput> {
+  constructor(private readonly analyzer: CodeHealthAnalyzer = new CodeHealthAnalyzer()) {}
+
+  public async invoke(
+    options: vscode.LanguageModelToolInvocationOptions<AnalyzeCodeHealthToolInput>
+  ): Promise<vscode.LanguageModelToolResult> {
+    let result;
+    if (options.input?.code) {
+      result = this.analyzer.analyzeCode(options.input.code, options.input.fileName || 'file.ts', true);
+    } else {
+      result = await this.analyzer.analyzeActiveEditor();
+    }
+
+    if (!result) {
+      return new vscode.LanguageModelToolResult([
+        new vscode.LanguageModelTextPart(JSON.stringify({ error: 'No active text editor or code content provided.' }))
+      ]);
+    }
+
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))
+    ]);
+  }
+}
 
 export class GetArchitectureTool implements vscode.LanguageModelTool<Record<string, unknown>> {
   constructor(private readonly indexer: ArchitectureIndexer = new ArchitectureIndexer()) {}
@@ -229,7 +260,8 @@ export function registerCopilotTools(
         vscode.lm.registerTool('copilotPlus_reviewChanges', new ReviewChangesTool(new DiffReviewer())),
         vscode.lm.registerTool('copilotPlus_compressContext', new CompressContextTool(new ContextCompressor())),
         vscode.lm.registerTool('copilotPlus_convertRules', new ConvertRulesTool(new RuleSyncManager())),
-        vscode.lm.registerTool('copilotPlus_indexArchitecture', new GetArchitectureTool(new ArchitectureIndexer()))
+        vscode.lm.registerTool('copilotPlus_indexArchitecture', new GetArchitectureTool(new ArchitectureIndexer())),
+        vscode.lm.registerTool('copilotPlus_analyzeCodeHealth', new AnalyzeCodeHealthTool(new CodeHealthAnalyzer()))
       );
     }
   } catch {
