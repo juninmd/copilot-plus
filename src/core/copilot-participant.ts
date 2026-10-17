@@ -12,6 +12,9 @@ import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
 import { ArchitectureIndexer } from './architecture-indexer';
 import { CodeHealthAnalyzer } from './code-health-analyzer';
+import { SpecGenerator } from './spec-generator';
+import { ModelBenchmarker } from './model-benchmarker';
+import { AntiRegressionGuard } from './anti-regression-guard';
 
 export function registerCopilotParticipant(
   quotaService: QuotaService,
@@ -212,6 +215,30 @@ export function registerCopilotParticipant(
             return;
           }
 
+          if (request.command === 'spec') {
+            response.progress('Generating feature implementation specification plan...');
+            const generator = new SpecGenerator();
+            const spec = await generator.generateSpec(request.prompt || 'Feature Specification');
+            response.markdown(`${spec.markdownSpec}\n`);
+            return;
+          }
+
+          if (request.command === 'benchmark') {
+            response.progress('Benchmarking available Copilot LLM models...');
+            const benchmarker = new ModelBenchmarker();
+            const bench = await benchmarker.benchmarkAvailableModels();
+            response.markdown(`${bench.summaryMarkdown}\n`);
+            return;
+          }
+
+          if (request.command === 'guard') {
+            response.progress('Evaluating uncommitted diff for regression risks...');
+            const guard = new AntiRegressionGuard();
+            const report = await guard.evaluateRegressionRisk();
+            response.markdown(`${report.summaryMarkdown}\n`);
+            return;
+          }
+
           // Default handler
           response.markdown('### 🤖 Copilot+ Assistant\n\n');
           response.markdown('I am your Copilot+ assistant! Here is how I can help you:\n\n');
@@ -225,6 +252,9 @@ export function registerCopilotParticipant(
           response.markdown('- `@copilotPlus /convert` — Convert & sync .cursorrules, .windsurfrules, AGENTS.md into copilot-instructions.md.\n');
           response.markdown('- `@copilotPlus /architecture` — Index workspace tech stack, entrypoints, modules, and architecture summary.\n');
           response.markdown('- `@copilotPlus /health` — Analyze active file code health, technical debt markers, and complexity.\n');
+          response.markdown('- `@copilotPlus /spec [description]` — Generate step-by-step feature specification plan.\n');
+          response.markdown('- `@copilotPlus /benchmark` — Benchmark available Copilot LLMs for latency and capacity.\n');
+          response.markdown('- `@copilotPlus /guard` — Evaluate uncommitted diff for breaking changes and regression risks.\n');
         }
       );
 
