@@ -135,6 +135,24 @@
         "title": "Analyze Code Health & Technical Debt",
         "category": "Copilot+",
         "icon": "$(pulse)"
+      },
+      {
+        "command": "copilotPlus.generateSpecWorkflow",
+        "title": "Generate Feature Specification Plan",
+        "category": "Copilot+",
+        "icon": "$(project)"
+      },
+      {
+        "command": "copilotPlus.benchmarkModels",
+        "title": "Benchmark Copilot LLM Models",
+        "category": "Copilot+",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "copilotPlus.guardAntiRegression",
+        "title": "Guard Against Architectural Regressions",
+        "category": "Copilot+",
+        "icon": "$(shield)"
       }
     ],
     "viewsContainers": {
@@ -389,6 +407,44 @@
             }
           }
         }
+      },
+      {
+        "id": "copilotPlus_generateFeatureSpec",
+        "name": "generate_feature_spec",
+        "displayName": "Generate Feature Spec Plan",
+        "modelDescription": "Generates a step-by-step architectural specification plan for a given feature description.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "featureDescription": {
+              "type": "string",
+              "description": "Description of the feature to design and plan."
+            }
+          },
+          "required": [
+            "featureDescription"
+          ]
+        }
+      },
+      {
+        "id": "copilotPlus_benchmarkModels",
+        "name": "benchmark_copilot_models",
+        "displayName": "Benchmark Copilot Models",
+        "modelDescription": "Benchmarks response latency and tokens across available VS Code Copilot LLMs.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "id": "copilotPlus_guardAntiRegression",
+        "name": "guard_anti_regression",
+        "displayName": "Anti-Regression & Architectural Guard",
+        "modelDescription": "Evaluates uncommitted Git diffs against architectural invariants, type safety, and missing test coverage risks.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
       }
     ],
     "chatParticipants": [
@@ -436,6 +492,18 @@
           {
             "name": "health",
             "description": "Analyze active file code health, technical debt markers, and complexity"
+          },
+          {
+            "name": "spec",
+            "description": "Generate step-by-step feature specification plan"
+          },
+          {
+            "name": "benchmark",
+            "description": "Benchmark available Copilot LLM models for latency and capabilities"
+          },
+          {
+            "name": "guard",
+            "description": "Evaluate uncommitted diff for breaking changes and regression risks"
           }
         ]
       }

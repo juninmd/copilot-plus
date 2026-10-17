@@ -21,6 +21,9 @@ import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
 import { ArchitectureIndexer } from './architecture-indexer';
 import { CodeHealthAnalyzer } from './code-health-analyzer';
+import { SpecGenerator } from './spec-generator';
+import { ModelBenchmarker } from './model-benchmarker';
+import { AntiRegressionGuard } from './anti-regression-guard';
 
 export class ExtensionManager implements vscode.Disposable {
   private readonly tracker: RequestTracker;
@@ -139,6 +142,47 @@ export class ExtensionManager implements vscode.Disposable {
       }),
       vscode.commands.registerCommand('copilotPlus.recommendModel', async () => {
         await recommendModelQuickPick();
+      }),
+      vscode.commands.registerCommand('copilotPlus.generateSpecWorkflow', async () => {
+        const desc = await vscode.window.showInputBox({
+          prompt: 'Describe feature to generate specification plan for:',
+          placeHolder: 'e.g. Add real-time OAuth2 user authentication and session management'
+        });
+        if (!desc) return;
+        const generator = new SpecGenerator();
+        const spec = await generator.generateSpec(desc);
+        vscode.window.showInformationMessage(
+          `Feature Spec created with ${spec.steps.length} step(s)!`,
+          'Open Chat'
+        ).then((action) => {
+          if (action === 'Open Chat') {
+            void vscode.commands.executeCommand('workbench.action.chat.open', `@copilotPlus /spec ${desc}`);
+          }
+        });
+      }),
+      vscode.commands.registerCommand('copilotPlus.benchmarkModels', async () => {
+        const benchmarker = new ModelBenchmarker();
+        const res = await benchmarker.benchmarkAvailableModels();
+        vscode.window.showInformationMessage(
+          `Benchmarked ${res.results.length} model(s). Fastest: ${res.fastestModel ?? 'N/A'}.`,
+          'Open Chat'
+        ).then((action) => {
+          if (action === 'Open Chat') {
+            void vscode.commands.executeCommand('workbench.action.chat.open', '@copilotPlus /benchmark');
+          }
+        });
+      }),
+      vscode.commands.registerCommand('copilotPlus.guardAntiRegression', async () => {
+        const guard = new AntiRegressionGuard();
+        const report = await guard.evaluateRegressionRisk();
+        vscode.window.showInformationMessage(
+          `Anti-Regression Guard: Status ${report.status.toUpperCase()} (Risk Score: ${report.riskScore}/100, ${report.risks.length} issue(s)).`,
+          'Open Chat'
+        ).then((action) => {
+          if (action === 'Open Chat') {
+            void vscode.commands.executeCommand('workbench.action.chat.open', '@copilotPlus /guard');
+          }
+        });
       }),
       vscode.commands.registerCommand('copilotPlus.reviewChanges', async () => {
         const reviewer = new DiffReviewer();

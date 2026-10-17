@@ -9,6 +9,49 @@ import { ContextCompressor } from './context-compressor';
 import { RuleSyncManager } from './rule-sync-manager';
 import { ArchitectureIndexer } from './architecture-indexer';
 import { CodeHealthAnalyzer } from './code-health-analyzer';
+import { SpecGenerator } from './spec-generator';
+import { ModelBenchmarker } from './model-benchmarker';
+import { AntiRegressionGuard } from './anti-regression-guard';
+
+export interface GenerateFeatureSpecToolInput {
+  featureDescription: string;
+}
+
+export class GenerateFeatureSpecTool implements vscode.LanguageModelTool<GenerateFeatureSpecToolInput> {
+  constructor(private readonly generator: SpecGenerator = new SpecGenerator()) {}
+
+  public async invoke(
+    options: vscode.LanguageModelToolInvocationOptions<GenerateFeatureSpecToolInput>
+  ): Promise<vscode.LanguageModelToolResult> {
+    const desc = options.input?.featureDescription || 'New Feature';
+    const spec = await this.generator.generateSpec(desc);
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(JSON.stringify(spec, null, 2))
+    ]);
+  }
+}
+
+export class BenchmarkModelsTool implements vscode.LanguageModelTool<Record<string, unknown>> {
+  constructor(private readonly benchmarker: ModelBenchmarker = new ModelBenchmarker()) {}
+
+  public async invoke(): Promise<vscode.LanguageModelToolResult> {
+    const res = await this.benchmarker.benchmarkAvailableModels();
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(JSON.stringify(res, null, 2))
+    ]);
+  }
+}
+
+export class GuardAntiRegressionTool implements vscode.LanguageModelTool<Record<string, unknown>> {
+  constructor(private readonly guard: AntiRegressionGuard = new AntiRegressionGuard()) {}
+
+  public async invoke(): Promise<vscode.LanguageModelToolResult> {
+    const report = await this.guard.evaluateRegressionRisk();
+    return new vscode.LanguageModelToolResult([
+      new vscode.LanguageModelTextPart(JSON.stringify(report, null, 2))
+    ]);
+  }
+}
 
 export interface AnalyzeCodeHealthToolInput {
   code?: string;
@@ -226,7 +269,10 @@ export function registerCopilotTools(
         vscode.lm.registerTool('copilotPlus_compressContext', new CompressContextTool(new ContextCompressor())),
         vscode.lm.registerTool('copilotPlus_convertRules', new ConvertRulesTool(new RuleSyncManager())),
         vscode.lm.registerTool('copilotPlus_indexArchitecture', new GetArchitectureTool(new ArchitectureIndexer())),
-        vscode.lm.registerTool('copilotPlus_analyzeCodeHealth', new AnalyzeCodeHealthTool(advisor))
+        vscode.lm.registerTool('copilotPlus_analyzeCodeHealth', new AnalyzeCodeHealthTool(advisor)),
+        vscode.lm.registerTool('copilotPlus_generateFeatureSpec', new GenerateFeatureSpecTool(new SpecGenerator(promptManager))),
+        vscode.lm.registerTool('copilotPlus_benchmarkModels', new BenchmarkModelsTool(new ModelBenchmarker())),
+        vscode.lm.registerTool('copilotPlus_guardAntiRegression', new GuardAntiRegressionTool(new AntiRegressionGuard()))
       );
     }
   } catch {
