@@ -20,7 +20,10 @@ export interface ArchitectureSummary {
 export class ArchitectureIndexer {
   public async analyzeWorkspace(): Promise<ArchitectureSummary> {
     const workspaceFolders = vscode.workspace.workspaceFolders;
-    const workspaceName = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].name : 'Workspace';
+    const workspaceName =
+      workspaceFolders && workspaceFolders.length > 0
+        ? workspaceFolders[0].name
+        : 'Workspace';
 
     const files = await vscode.workspace.findFiles(
       '**/*.{ts,js,jsx,tsx,py,go,rs,java,kt,dart,c,cpp,cs}',
@@ -64,7 +67,9 @@ export class ArchitectureIndexer {
       /manage\.py$/i
     ];
 
-    return paths.filter((p) => entryPatterns.some((pattern) => pattern.test(p))).sort();
+    return paths
+      .filter((p) => entryPatterns.some((pattern) => pattern.test(p)))
+      .sort();
   }
 
   public detectModules(paths: string[], entrypoints: string[]): ModuleInfo[] {
@@ -102,11 +107,14 @@ export class ArchitectureIndexer {
   public async detectTechStack(): Promise<string[]> {
     const stack: string[] = [];
 
-    const packageJsonFiles = await vscode.workspace.findFiles('**/package.json', '**/node_modules/**');
-    if (packageJsonFiles.length > 0) {
+    const packageJsonPaths = await vscode.workspace.findFiles(
+      '**/package.json',
+      '**/node_modules/**'
+    );
+    if (packageJsonPaths.length > 0) {
       stack.push('Node.js/JavaScript');
       try {
-        const bytes = await vscode.workspace.fs.readFile(packageJsonFiles[0]);
+        const bytes = await vscode.workspace.fs.readFile(packageJsonPaths[0]);
         const content = new TextDecoder().decode(bytes);
         const pkg = JSON.parse(content);
         const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
@@ -122,14 +130,14 @@ export class ArchitectureIndexer {
       }
     }
 
-    const pyFiles = await vscode.workspace.findFiles('**/*.py', '**/node_modules/**');
-    if (pyFiles.length > 0) stack.push('Python');
+    const pyPaths = await vscode.workspace.findFiles('**/*.py', '**/node_modules/**');
+    if (pyPaths.length > 0) stack.push('Python');
 
-    const goFiles = await vscode.workspace.findFiles('**/go.mod', '**/node_modules/**');
-    if (goFiles.length > 0) stack.push('Go');
+    const goPaths = await vscode.workspace.findFiles('**/go.mod', '**/node_modules/**');
+    if (goPaths.length > 0) stack.push('Go');
 
-    const rsFiles = await vscode.workspace.findFiles('**/Cargo.toml', '**/node_modules/**');
-    if (rsFiles.length > 0) stack.push('Rust');
+    const rsPaths = await vscode.workspace.findFiles('**/Cargo.toml', '**/node_modules/**');
+    if (rsPaths.length > 0) stack.push('Rust');
 
     return Array.from(new Set(stack));
   }
@@ -137,10 +145,13 @@ export class ArchitectureIndexer {
   public async detectDependencies(): Promise<string[]> {
     const deps: string[] = [];
 
-    const packageJsonFiles = await vscode.workspace.findFiles('**/package.json', '**/node_modules/**');
-    if (packageJsonFiles.length > 0) {
+    const packageJsonPaths = await vscode.workspace.findFiles(
+      '**/package.json',
+      '**/node_modules/**'
+    );
+    if (packageJsonPaths.length > 0) {
       try {
-        const bytes = await vscode.workspace.fs.readFile(packageJsonFiles[0]);
+        const bytes = await vscode.workspace.fs.readFile(packageJsonPaths[0]);
         const content = new TextDecoder().decode(bytes);
         const pkg = JSON.parse(content);
 
@@ -167,7 +178,9 @@ export class ArchitectureIndexer {
 
     lines.push(`### 🏗️ Workspace Architecture Index: ${workspaceName}`);
     lines.push(``);
-    lines.push(`- **Tech Stack:** ${techStack.length > 0 ? techStack.join(', ') : 'Unknown'}`);
+    lines.push(
+      `- **Tech Stack:** ${techStack.length > 0 ? techStack.join(', ') : 'Unknown'}`
+    );
     lines.push(`- **Total Source Files:** ${totalFiles}`);
     lines.push(`- **Entrypoints Detected:** ${entrypoints.length}`);
     lines.push(``);

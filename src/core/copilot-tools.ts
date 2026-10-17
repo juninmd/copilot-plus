@@ -89,13 +89,9 @@ export class GetArchitectureTool implements vscode.LanguageModelTool<Record<stri
   public async invoke(): Promise<vscode.LanguageModelToolResult> {
     try {
       const result = await this.indexer.analyzeWorkspace();
-      return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))
-      ]);
+      return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))]);
     } catch (err) {
-      return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart(JSON.stringify({ error: String(err) }, null, 2))
-      ]);
+      return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify({ error: String(err) }, null, 2))]);
     }
   }
 }
@@ -106,13 +102,9 @@ export class ConvertRulesTool implements vscode.LanguageModelTool<Record<string,
   public async invoke(): Promise<vscode.LanguageModelToolResult> {
     try {
       const result = await this.ruleSyncManager.convertWorkspaceRules();
-      return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))
-      ]);
+      return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))]);
     } catch (err) {
-      return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart(JSON.stringify({ error: String(err) }, null, 2))
-      ]);
+      return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify({ error: String(err) }, null, 2))]);
     }
   }
 }
@@ -130,22 +122,15 @@ export class CompressContextTool implements vscode.LanguageModelTool<CompressCon
   ): Promise<vscode.LanguageModelToolResult> {
     const signaturesOnly = options.input?.signaturesOnly ?? false;
     let result;
-
     if (options.input?.code) {
       result = this.compressor.compressCode(options.input.code, { signaturesOnly });
     } else {
       result = await this.compressor.compressActiveEditor({ signaturesOnly });
     }
-
     if (!result) {
-      return new vscode.LanguageModelToolResult([
-        new vscode.LanguageModelTextPart(JSON.stringify({ error: 'No active editor or code provided to compress.' }))
-      ]);
+      return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify({ error: 'No active editor or code provided to compress.' }))]);
     }
-
-    return new vscode.LanguageModelToolResult([
-      new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))
-    ]);
+    return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))]);
   }
 }
 
@@ -161,10 +146,7 @@ export class ReviewChangesTool implements vscode.LanguageModelTool<ReviewChanges
   ): Promise<vscode.LanguageModelToolResult> {
     const stagedOnly = options.input?.stagedOnly ?? false;
     const reviewResult = await this.reviewer.getWorkspaceDiff(undefined, stagedOnly);
-
-    return new vscode.LanguageModelToolResult([
-      new vscode.LanguageModelTextPart(JSON.stringify(reviewResult, null, 2))
-    ]);
+    return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify(reviewResult, null, 2))]);
   }
 }
 
@@ -182,30 +164,26 @@ export class OptimizePromptTool implements vscode.LanguageModelTool<OptimizeProm
     const rawPrompt = options.input?.prompt ?? '';
     const taskType = options.input?.taskType ?? 'general';
     const techStack = await this.promptManager.detectWorkspaceTechnologies();
-
     const stackText = techStack.length > 0 ? techStack.join(', ') : 'Software Engineering';
-
     const structuredPrompt = [
       `### Role & Context`,
       `You are an expert developer specializing in ${stackText}.`,
-      ``,
+      '',
       `### Task (${taskType.toUpperCase()})`,
       `${rawPrompt}`,
-      ``,
+      '',
       `### Constraints & Standards`,
       `- Follow Clean Code, SOLID, DRY, KISS, and YAGNI principles.`,
       `- Maintain strict type safety, proper error handling, and high test coverage.`,
       `- Output direct, production-ready implementation without filler.`,
-      ``,
+      '',
       `### Expected Output`,
       `1. Brief overview of changes/approach.`,
       `2. Production-ready code implementation.`,
       `3. Corresponding unit/integration test cases.`
     ].join('\n');
-
     const auditor = new ContextAuditor(this.promptManager);
     const estimatedTokens = auditor.estimateTokenCount(structuredPrompt);
-
     const result = {
       originalPrompt: rawPrompt,
       taskType,
@@ -213,10 +191,7 @@ export class OptimizePromptTool implements vscode.LanguageModelTool<OptimizeProm
       estimatedTokens,
       optimizedPrompt: structuredPrompt
     };
-
-    return new vscode.LanguageModelToolResult([
-      new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))
-    ]);
+    return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify(result, null, 2))]);
   }
 }
 
@@ -229,12 +204,10 @@ export class GetQuotaTool implements vscode.LanguageModelTool<Record<string, unk
   public async invoke(): Promise<vscode.LanguageModelToolResult> {
     const quotaResult = await this.quotaService.fetchQuota();
     const configTotal = vscode.workspace.getConfiguration('copilotPlus').get<number>('quotaTotal', 300);
-
     const quotaInfo = quotaResult.quota;
     const total = quotaInfo?.total ?? configTotal;
     const remaining = quotaInfo?.remaining ?? total;
     const percentLeft = quotaInfo ? 100 - quotaInfo.percentUsed : 100;
-
     const summary = {
       status: quotaInfo ? 'live' : 'fallback',
       totalQuota: total,
@@ -243,10 +216,7 @@ export class GetQuotaTool implements vscode.LanguageModelTool<Record<string, unk
       sessionSpent: Number(this.tracker.getSessionCost().toFixed(2)),
       dailySpent: Number(this.tracker.getTodayCost().toFixed(2))
     };
-
-    return new vscode.LanguageModelToolResult([
-      new vscode.LanguageModelTextPart(JSON.stringify(summary, null, 2))
-    ]);
+    return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify(summary, null, 2))]);
   }
 }
 
@@ -260,17 +230,13 @@ export class RecommendModelTool implements vscode.LanguageModelTool<RecommendMod
   ): Promise<vscode.LanguageModelToolResult> {
     const task = options.input?.taskDescription ?? 'general coding task';
     const rec = recommendModel(task);
-
     const summary = {
       task,
       recommendedModel: rec.model,
       multiplier: rec.multiplier,
       reasoning: rec.reason
     };
-
-    return new vscode.LanguageModelToolResult([
-      new vscode.LanguageModelTextPart(JSON.stringify(summary, null, 2))
-    ]);
+    return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify(summary, null, 2))]);
   }
 }
 
@@ -279,9 +245,7 @@ export class AuditContextTool implements vscode.LanguageModelTool<Record<string,
 
   public async invoke(): Promise<vscode.LanguageModelToolResult> {
     const audit = await this.auditor.auditWorkspace();
-    return new vscode.LanguageModelToolResult([
-      new vscode.LanguageModelTextPart(JSON.stringify(audit, null, 2))
-    ]);
+    return new vscode.LanguageModelToolResult([new vscode.LanguageModelTextPart(JSON.stringify(audit, null, 2))]);
   }
 }
 
@@ -290,11 +254,12 @@ export function registerCopilotTools(
   tracker: RequestTracker
 ): vscode.Disposable[] {
   const disposables: vscode.Disposable[] = [];
-
   try {
     if (typeof vscode.lm?.registerTool === 'function') {
       const auditor = new ContextAuditor();
       const promptManager = new PromptManager();
+      const indexer = new ArchitectureIndexer();
+      const advisor = new CodeHealthAnalyzer();
       disposables.push(
         vscode.lm.registerTool('copilotPlus_getQuota', new GetQuotaTool(quotaService, tracker)),
         vscode.lm.registerTool('copilotPlus_recommendModel', new RecommendModelTool()),
@@ -304,7 +269,7 @@ export function registerCopilotTools(
         vscode.lm.registerTool('copilotPlus_compressContext', new CompressContextTool(new ContextCompressor())),
         vscode.lm.registerTool('copilotPlus_convertRules', new ConvertRulesTool(new RuleSyncManager())),
         vscode.lm.registerTool('copilotPlus_indexArchitecture', new GetArchitectureTool(new ArchitectureIndexer())),
-        vscode.lm.registerTool('copilotPlus_analyzeCodeHealth', new AnalyzeCodeHealthTool(new CodeHealthAnalyzer())),
+        vscode.lm.registerTool('copilotPlus_analyzeCodeHealth', new AnalyzeCodeHealthTool(advisor)),
         vscode.lm.registerTool('copilotPlus_generateFeatureSpec', new GenerateFeatureSpecTool(new SpecGenerator(promptManager))),
         vscode.lm.registerTool('copilotPlus_benchmarkModels', new BenchmarkModelsTool(new ModelBenchmarker())),
         vscode.lm.registerTool('copilotPlus_guardAntiRegression', new GuardAntiRegressionTool(new AntiRegressionGuard()))
@@ -313,6 +278,5 @@ export function registerCopilotTools(
   } catch {
     // vscode.lm.registerTool may not be available in mock environments
   }
-
   return disposables;
 }

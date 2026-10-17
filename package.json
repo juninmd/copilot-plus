@@ -77,6 +77,18 @@
         "icon": "$(file-text)"
       },
       {
+        "command": "copilotPlus.generateArchitecture",
+        "title": "Generate Workspace Architecture Index",
+        "category": "Copilot+",
+        "icon": "$(organization)"
+      },
+      {
+        "command": "copilotPlus.analyzeCodeHealth",
+        "title": "Analyze Code Health & Technical Debt",
+        "category": "Copilot+",
+        "icon": "$(pulse)"
+      },
+      {
         "command": "copilotPlus.createPromptTemplate",
         "title": "Create Custom Prompt Template",
         "category": "Copilot+",
@@ -204,6 +216,16 @@
           "group": "navigation"
         },
         {
+          "command": "copilotPlus.generateArchitecture",
+          "when": "view == copilotPlus.prompts",
+          "group": "navigation"
+        },
+        {
+          "command": "copilotPlus.analyzeCodeHealth",
+          "when": "view == copilotPlus.prompts || view == copilotPlus.agents",
+          "group": "navigation"
+        },
+        {
           "command": "copilotPlus.auditContext",
           "when": "view == copilotPlus.prompts",
           "group": "navigation"
@@ -221,11 +243,6 @@
         {
           "command": "copilotPlus.diagnose",
           "when": "view == copilotPlus.agents",
-          "group": "navigation"
-        },
-        {
-          "command": "copilotPlus.analyzeCodeHealth",
-          "when": "view == copilotPlus.prompts || view == copilotPlus.agents",
           "group": "navigation"
         },
         {
@@ -344,9 +361,12 @@
             },
             "signaturesOnly": {
               "type": "boolean",
-              "description": "Whether to extract only class/function signatures."
+              "description": "Extract only function signatures."
             }
-          }
+          },
+          "required": [
+            "code"
+          ]
         }
       },
       {
@@ -360,10 +380,10 @@
         }
       },
       {
-        "id": "copilotPlus_indexArchitecture",
+        "id": "copilotPlus_getArchitectureSummary",
         "name": "get_workspace_architecture",
-        "displayName": "Workspace Architecture Indexer",
-        "modelDescription": "Indexes workspace entrypoints, key dependencies, module breakdown, and tech stack into structured Markdown context.",
+        "displayName": "Get Workspace Architecture Summary",
+        "modelDescription": "Analyzes project structure, tech stack, dependencies, and key entry points into a high-level architecture overview.",
         "inputSchema": {
           "type": "object",
           "properties": {}
